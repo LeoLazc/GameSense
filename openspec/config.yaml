@@ -1,0 +1,112 @@
+schema: spec-driven
+
+project: GameSense AI
+persistence: openspec
+strict_tdd: false
+
+context: |
+  Tech stack: .NET 10 (net10.0) ASP.NET Core Web API; EF Core 10 + SqlServer; MediatR 11 (CQRS), FluentValidation, AutoMapper.
+  Architecture: Clean/layered - Core (domain models, service interfaces), Infrastructure (DbContext, migrations, HTTP AI client, service implementations), Api (controllers, MediatR handlers, DTOs, validators, mapping profiles, middleware).
+  Testing: no test projects, runner, or command exist yet; solution builds with `dotnet build "GameSense AI.slnx"`.
+  Style: C# with nullable + implicit usings; async/await; DI consolidated in ServiceCollectionExtensions.
+  Solution: GameSense AI.slnx (XML solution format), not a git repository.
+
+projects:
+  - path: src/GameSense.Api
+    stack: ASP.NET Core Web API (net10.0); MediatR, FluentValidation, AutoMapper, EF Core Design, EF Core SqlServer
+    test_command: ""
+    test_framework: none
+  - path: src/GameSense.Core
+    stack: Class library (net10.0); domain models and service interfaces only
+    test_command: ""
+    test_framework: none
+  - path: src/GameSense.Infrastructure
+    stack: Class library (net10.0); EF Core 10 + SqlServer, DbContext, migrations, HTTP AI client
+    test_command: ""
+    test_framework: none
+
+testing:
+  strict_tdd: false
+  detected: "2026-09-01"
+  workspace_test_command: ""
+  build_command: dotnet build "GameSense AI.slnx"
+  capabilities: |
+    ## Testing Capabilities
+
+    **Strict TDD Mode**: disabled
+    **Detected**: 2026-09-01
+
+    ### Projects
+
+    | Relative path | Stack | Test command | Framework |
+    | ------------- | ----- | ------------ | --------- |
+    | `src/GameSense.Api` | ASP.NET Core Web API (net10.0) | — | — |
+    | `src/GameSense.Core` | Class library (net10.0) | — | — |
+    | `src/GameSense.Infrastructure` | Class library (net10.0) | — | — |
+
+    ### Test Layers
+
+    | Relative path | Layer | Available | Tool |
+    | ------------- | ----- | --------- | ---- |
+    | `src/GameSense.Api` | Unit | ❌ | — |
+    | `src/GameSense.Api` | Integration | ❌ | — |
+    | `src/GameSense.Api` | E2E | ❌ | — |
+    | `src/GameSense.Core` | Unit | ❌ | — |
+    | `src/GameSense.Core` | Integration | ❌ | — |
+    | `src/GameSense.Core` | E2E | ❌ | — |
+    | `src/GameSense.Infrastructure` | Unit | ❌ | — |
+    | `src/GameSense.Infrastructure` | Integration | ❌ | — |
+    | `src/GameSense.Infrastructure` | E2E | ❌ | — |
+
+    ### Coverage
+
+    | Relative path | Available | Command |
+    | ------------- | --------- | ------- |
+    | `src/GameSense.Api` | ❌ | — |
+    | `src/GameSense.Core` | ❌ | — |
+    | `src/GameSense.Infrastructure` | ❌ | — |
+
+    ### Quality Tools
+
+    | Relative path | Tool | Available | Command |
+    | ------------- | ---- | --------- | ------- |
+    | `src/GameSense.Api` | Linter | ❌ | — |
+    | `src/GameSense.Api` | Type checker | ✅ (compile-time via nullable + Roslyn) | `dotnet build "GameSense AI.slnx"` |
+    | `src/GameSense.Api` | Formatter | ❌ | — |
+    | `src/GameSense.Core` | Linter | ❌ | — |
+    | `src/GameSense.Core` | Type checker | ✅ (compile-time via nullable + Roslyn) | `dotnet build "GameSense AI.slnx"` |
+    | `src/GameSense.Core` | Formatter | ❌ | — |
+    | `src/GameSense.Infrastructure` | Linter | ❌ | — |
+    | `src/GameSense.Infrastructure` | Type checker | ✅ (compile-time via nullable + Roslyn) | `dotnet build "GameSense AI.slnx"` |
+    | `src/GameSense.Infrastructure` | Formatter | ❌ | — |
+
+    ### Notes
+
+    - No test projects, test runners, or test commands exist in the workspace (verified by inspection of all `.csproj` files and solution layout).
+    - Strict TDD is disabled: no explicit workspace-level test command covers every in-scope project. Enabling strict TDD later requires adding test projects (e.g., xUnit + coverlet) and a workspace-level test command such as `dotnet test "GameSense AI.slnx"`.
+    - Build verified working on 2026-09-01: `dotnet build "GameSense AI.slnx"` exits 0 with 2 warnings (NU1903: AutoMapper 12.0.1 has a known high severity vulnerability, GHSA-rvv3-g6hj-g44x).
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+  design:
+    - Follow the existing Core/Infrastructure/Api layering; keep domain logic and interfaces in Core
+    - Document architecture decisions with rationale
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+  apply:
+    guidelines:
+      - Follow existing code patterns (MediatR handlers, DTOs, FluentValidation validators, AutoMapper profiles)
+      - Register new services in ServiceCollectionExtensions.AddGameSenseServices
+    tdd: false
+    test_command: ""
+  verify:
+    test_command: ""
+    build_command: dotnet build "GameSense AI.slnx"
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas

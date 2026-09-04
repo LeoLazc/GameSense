@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/GameSense.Api/GameSense.Api.csproj" />
+    <Project Path="src/GameSense.Core/GameSense.Core.csproj" />
+    <Project Path="src/GameSense.Infrastructure/GameSense.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/GameSense.Api.Tests/GameSense.Api.Tests.csproj" />
+    <Project Path="tests/GameSense.Core.Tests/GameSense.Core.Tests.csproj" />
+    <Project Path="tests/GameSense.Infrastructure.Tests/GameSense.Infrastructure.Tests.csproj" />
+  </Folder>
+</Solution>
