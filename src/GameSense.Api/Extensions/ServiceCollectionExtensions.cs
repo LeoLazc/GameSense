@@ -10,6 +10,7 @@ using GameSense.Core.Services;
 using GameSense.Infrastructure.Data;
 using GameSense.Infrastructure.Repositories;
 using GameSense.Infrastructure.Services;
+using GameSense.Infrastructure.Options;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -19,6 +20,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using GameSense.Core.Models;
 using Microsoft.AspNetCore.Identity;
+using GameSense.Api.Services;
 
 namespace GameSense.Api.Extensions
 {
@@ -28,7 +30,7 @@ namespace GameSense.Api.Extensions
         {
             // FluentValidation
             services.AddFluentValidationAutoValidation();
-            services.AddValidatorsFromAssemblyContaining<ReviewRequestDtoValidator>();
+            services.AddValidatorsFromAssemblyContaining<CreateReviewRequestValidator>();
 
             // MediatR (scan this assembly for handlers)
             services.AddMediatR(typeof(ServiceCollectionExtensions).Assembly);
@@ -40,6 +42,15 @@ namespace GameSense.Api.Extensions
             // DbContext
             var defaultConn = configuration.GetConnectionString("DefaultConnection") ?? "Server=(localdb)\\mssqllocaldb;Database=GameSenseDb;Trusted_Connection=True;";
             services.AddDbContext<GameSenseDbContext>(opts => opts.UseSqlServer(defaultConn));
+
+            services.Configure<GameCatalogOptions>(configuration.GetSection("GameCatalog"));
+            services.AddHttpClient("GameCatalogApi", (provider, client) =>
+            {
+                var options = provider.GetRequiredService<Microsoft.Extensions.Options.IOptions<GameCatalogOptions>>().Value;
+                client.BaseAddress = new Uri(options.ApiBaseUrl);
+            });
+            services.AddSingleton<IGameCatalogProvider, HttpGameCatalogProvider>();
+            services.AddHostedService<GameCatalogStartupSync>();
 
             var jwtKey = configuration["Jwt:Key"];
             var jwtIssuer = configuration["Jwt:Issuer"];
@@ -65,13 +76,6 @@ namespace GameSense.Api.Extensions
                 });
             services.AddAuthorization();
 
-            // Review-generation AI client (kept separate from quiz evaluation).
-            services.AddHttpClient<IAiClient, HttpAiClient>(client =>
-            {
-                var baseUrl = configuration["Ai:BaseUrl"];
-                if (!string.IsNullOrEmpty(baseUrl)) client.BaseAddress = new Uri(baseUrl);
-            });
-
             var quizProvider = configuration["Ai:QuizProvider"] ?? "Http";
             if (string.Equals(quizProvider, "Http", StringComparison.OrdinalIgnoreCase))
             {
@@ -87,16 +91,19 @@ namespace GameSense.Api.Extensions
             }
 
             // Domain services
-            services.AddScoped<IReviewService, ReviewService>();
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IQuizRepository, QuizRepository>();
+            services.AddScoped<IGameRepository, GameRepository>();
+            services.AddScoped<IReviewRepository, ReviewRepository>();
+            services.AddScoped<IGotyPredictionRepository, GotyPredictionRepository>();
             services.AddScoped<IQuizAnswerEvaluator, KnowledgeQuizAnswerEvaluator>();
+            services.AddScoped<IQuizSessionService, QuizSessionService>();
+            services.AddScoped<IQuizScoringPolicy, QuizScoringPolicy>();
+            services.AddScoped<IReviewEligibilityPolicy, ReviewEligibilityPolicy>();
+            services.AddScoped<IReviewCreationService, ReviewCreationService>();
+            services.AddScoped<IGotyPredictionService, GotyPredictionService>();
             services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
-
-            // AutoMapper resolvers require ILogger; register types for DI
-            services.AddSingleton<ContentQuestionsResolver>();
-            services.AddSingleton<ContentTextResolver>();
 
             return services;
         }
