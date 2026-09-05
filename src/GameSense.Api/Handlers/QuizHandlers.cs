@@ -56,53 +56,19 @@ public sealed class StartQuizHandler(IQuizRepository quizzes, IMapper mapper) : 
     }
 }
 
-public sealed class SubmitQuizAnswerHandler(IQuizRepository quizzes, IQuizAnswerEvaluator evaluator, IMapper mapper) : IRequestHandler<SubmitQuizAnswerCommand, QuizAnswerResponseDto?>
+public sealed class SubmitQuizAnswerHandler(IQuizSessionService quizSessions, IMapper mapper) : IRequestHandler<SubmitQuizAnswerCommand, QuizAnswerResponseDto?>
 {
     public async Task<QuizAnswerResponseDto?> Handle(SubmitQuizAnswerCommand request, CancellationToken ct)
     {
-        var session = await quizzes.GetSessionAsync(request.SessionId, request.UserId, ct);
-        if (session == null) return null;
-        if (session.Status != QuizSessionStatuses.InProgress) throw new QuizConflictException("The quiz session is not in progress.");
-        var snapshotQuestions = session.QuizSessionQuestions.OrderBy(sq => sq.Order).Select(sq => sq.Question!).ToList();
-        if (await quizzes.HasAnswerAsync(request.SessionId, request.QuestionId, ct)) throw new QuizConflictException("This question has already been answered.");
+        var result = await quizSessions.SubmitAnswerAsync(request.UserId, request.SessionId, request.QuestionId, request.AnswerText, ct);
+        if (result == null) return null;
 
-        var question = snapshotQuestions.SingleOrDefault(q => q.Id == request.QuestionId);
-        if (question == null) throw new QuizConflictException("The question is not part of this quiz session.");
-
-        var evaluation = await evaluator.EvaluateAsync(question, request.AnswerText, ct);
-        await quizzes.AddAnswerAsync(new QuizAnswer
-        {
-            QuizSessionId = session.Id,
-            QuestionId = question.Id,
-            AnswerText = request.AnswerText.Trim(),
-            AiScore = evaluation.Score,
-            AiConfidence = evaluation.Confidence,
-            AiEvaluation = evaluation.Evaluation
-        }, ct);
-
-        session = await quizzes.GetSessionAsync(request.SessionId, request.UserId, ct)
-            ?? throw new QuizConflictException("The quiz session could not be reloaded after recording the answer.");
-        var answered = session.QuizAnswers.Count;
-        var progress = new QuizProgressDto(answered, snapshotQuestions.Count);
-        if (answered < snapshotQuestions.Count)
-        {
-            var next = snapshotQuestions.FirstOrDefault(q => session.QuizAnswers.All(a => a.QuestionId != q.Id));
-            return new QuizAnswerResponseDto(false, progress, next == null ? null : QuizMapping.Question(mapper, next), null);
-        }
-
-        var totalWeight = snapshotQuestions.Sum(q => q.QuestionWeight);
-        var scores = session.QuizAnswers.ToDictionary(a => a.QuestionId, a => a.AiScore);
-        var expertiseScore = totalWeight == 0
-            ? 0m
-            : Math.Round(snapshotQuestions.Sum(q => q.QuestionWeight * scores.GetValueOrDefault(q.Id)) / totalWeight, 2, MidpointRounding.AwayFromZero);
-        session.FinalScore = expertiseScore;
-        if (session.User != null)
-            session.User.ExpertiseScore = expertiseScore;
-        session.Status = QuizSessionStatuses.Completed;
-        session.CompletedAt = DateTime.UtcNow;
-        await quizzes.SaveChangesAsync(ct);
-
-        return new QuizAnswerResponseDto(true, progress, null, QuizMapping.Result(mapper, session));
+        var progress = new QuizProgressDto(result.Answered, result.Total);
+        return new QuizAnswerResponseDto(
+            result.Completed,
+            progress,
+            result.NextQuestion == null ? null : QuizMapping.Question(mapper, result.NextQuestion),
+            result.Completed ? QuizMapping.Result(mapper, result.Session) : null);
     }
 }
 

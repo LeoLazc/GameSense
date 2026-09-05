@@ -7,6 +7,5 @@ namespace GameSense.Core.Models
 
         // Navigation
         public ICollection<Game> Games { get; set; } = new List<Game>();
-        public ICollection<Review> Reviews { get; set; } = new List<Review>();
     }
 }

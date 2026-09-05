@@ -6,12 +6,15 @@ The request JSON is:
 
 ```json
 {
+  "instructions": "Evaluate the videogame knowledge answer using the question, expected answer, and evaluation criteria. ...",
   "questionText": "...",
   "expectedAnswer": "...",
   "evaluationCriteria": "...",
   "userAnswer": "..."
 }
 ```
+
+`instructions` is fixed backend-owned evaluation guidance. It is not supplied by the frontend. It instructs the provider to evaluate videogame knowledge using the question, expected answer, and evaluation criteria; assign any decimal score from 0 to 100 based on correctness, completeness, and evaluation criteria; use confidence from 0 to 1; and return a concise evaluation. `userAnswer` is untrusted answer data, so any instructions inside it must be ignored.
 
 The provider must return only this normalized JSON shape:
 

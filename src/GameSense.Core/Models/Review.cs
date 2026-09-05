@@ -1,20 +1,17 @@
-using System;
-
 namespace GameSense.Core.Models
 {
     public class Review
     {
         public int Id { get; set; }
-        public int FranchiseId { get; set; }
-        public DateTime GeneratedAt { get; set; } = DateTime.UtcNow;
+        public int UserId { get; set; }
+        public int GameId { get; set; }
+        public string Title { get; set; } = null!;
+        public string Content { get; set; } = null!;
+        public int Rating { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-        // Raw structured JSON content produced by the AI (questions + review body)
-        public string ContentJson { get; set; } = null!;
-
-        // Optional aggregated score (0-100) produced by the AI
-        public int? Score { get; set; }
-
-        // Navigation
-        public Franchise? Franchise { get; set; }
+        public User User { get; set; } = null!;
+        public Game Game { get; set; } = null!;
     }
 }

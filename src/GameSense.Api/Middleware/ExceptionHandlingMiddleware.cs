@@ -69,9 +69,25 @@ namespace GameSense.Api.Middleware
                     context.Response.StatusCode = pd.Status.Value;
                     break;
                 case ExpertiseEligibilityException:
-                    pd.Title = "Review generation not authorized";
+                    pd.Title = "Review not authorized";
                     pd.Status = StatusCodes.Status403Forbidden;
                     pd.Detail = exception.Message;
+                    context.Response.StatusCode = pd.Status.Value;
+                    break;
+                case PredictionConflictException:
+                    pd.Title = "GOTY prediction conflict";
+                    pd.Status = StatusCodes.Status409Conflict;
+                    context.Response.StatusCode = pd.Status.Value;
+                    break;
+                case ReviewConflictException:
+                    pd.Title = "Review conflict";
+                    pd.Status = StatusCodes.Status409Conflict;
+                    pd.Detail = exception.Message;
+                    context.Response.StatusCode = pd.Status.Value;
+                    break;
+                case KeyNotFoundException:
+                    pd.Title = "Resource not found";
+                    pd.Status = StatusCodes.Status404NotFound;
                     context.Response.StatusCode = pd.Status.Value;
                     break;
                 default:
