@@ -85,6 +85,10 @@ namespace GameSense.Api.Extensions
                     if (!string.IsNullOrWhiteSpace(baseUrl)) client.BaseAddress = new Uri(baseUrl);
                 });
             }
+            else if (string.Equals(quizProvider, "OpenAI", StringComparison.OrdinalIgnoreCase))
+            {
+                services.AddSingleton<IAiQuizProvider, OpenAiQuizProvider>();
+            }
             else
             {
                 throw new InvalidOperationException($"Unsupported Ai:QuizProvider '{quizProvider}'. Register its IAiQuizProvider adapter here.");
