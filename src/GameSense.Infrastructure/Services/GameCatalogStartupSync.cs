@@ -12,9 +12,9 @@ public sealed class GameCatalogStartupSync(
     IServiceScopeFactory scopeFactory,
     IHostEnvironment environment,
     IOptions<GameCatalogOptions> options,
-    ILogger<GameCatalogStartupSync> logger) : IHostedService
+    ILogger<GameCatalogStartupSync> logger) : BackgroundService
 {
-    public async Task StartAsync(CancellationToken cancellationToken)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         if (!environment.IsDevelopment() || !options.Value.EnableDevelopmentStartupSync)
         {
@@ -27,11 +27,11 @@ public sealed class GameCatalogStartupSync(
             using var scope = scopeFactory.CreateScope();
             var provider = scope.ServiceProvider.GetRequiredService<IGameCatalogProvider>();
             var repository = scope.ServiceProvider.GetRequiredService<IGameRepository>();
-            var games = await provider.GetCurrentYearGamesAsync(DateTime.UtcNow.Year, cancellationToken);
-            var persisted = await repository.UpsertCatalogGamesAsync(games, cancellationToken);
+            var games = await provider.GetCurrentYearGamesAsync(DateTime.UtcNow.Year, stoppingToken);
+            var persisted = await repository.UpsertCatalogGamesAsync(games, stoppingToken);
             logger.LogInformation("Development game catalog startup sync persisted {GameCount} games.", persisted.Count);
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
         {
             logger.LogWarning("Development game catalog startup sync was canceled.");
         }
@@ -40,6 +40,4 @@ public sealed class GameCatalogStartupSync(
             logger.LogWarning(exception, "Development game catalog startup sync failed; the API will continue starting.");
         }
     }
-
-    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

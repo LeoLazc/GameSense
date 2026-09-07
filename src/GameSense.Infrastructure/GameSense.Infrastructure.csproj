@@ -11,9 +11,13 @@
     <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="10.0.11" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.11" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.11" />
+    <PackageReference Include="OpenAI" Version="2.13.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\GameSense.Core\GameSense.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="GameSense.Infrastructure.Tests" />
   </ItemGroup>
 
 </Project>

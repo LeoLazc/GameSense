@@ -29,6 +29,7 @@ public sealed class GameCatalogStartupSyncTests
             NullLogger<GameCatalogStartupSync>.Instance);
 
         await service.StartAsync(CancellationToken.None);
+        await service.StopAsync(CancellationToken.None);
 
         provider.Verify(x => x.GetCurrentYearGamesAsync(DateTime.UtcNow.Year, It.IsAny<CancellationToken>()), Times.Once);
         repository.Verify(x => x.UpsertCatalogGamesAsync(catalogGames, It.IsAny<CancellationToken>()), Times.Once);
@@ -47,7 +48,11 @@ public sealed class GameCatalogStartupSyncTests
             Microsoft.Extensions.Options.Options.Create(new GameCatalogOptions { EnableDevelopmentStartupSync = true }),
             NullLogger<GameCatalogStartupSync>.Instance);
 
-        Assert.DoesNotThrowAsync(() => service.StartAsync(CancellationToken.None));
+        Assert.DoesNotThrowAsync(async () =>
+        {
+            await service.StartAsync(CancellationToken.None);
+            await service.StopAsync(CancellationToken.None);
+        });
         repository.Verify(x => x.UpsertCatalogGamesAsync(It.IsAny<IEnumerable<CatalogGame>>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -63,6 +68,7 @@ public sealed class GameCatalogStartupSyncTests
             NullLogger<GameCatalogStartupSync>.Instance);
 
         await service.StartAsync(CancellationToken.None);
+        await service.StopAsync(CancellationToken.None);
 
         provider.Verify(x => x.GetCurrentYearGamesAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -79,8 +85,34 @@ public sealed class GameCatalogStartupSyncTests
             NullLogger<GameCatalogStartupSync>.Instance);
 
         await service.StartAsync(CancellationToken.None);
+        await service.StopAsync(CancellationToken.None);
 
         provider.Verify(x => x.GetCurrentYearGamesAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Test]
+    public async Task Start_returns_before_a_slow_sync_finishes()
+    {
+        var provider = new Mock<IGameCatalogProvider>();
+        var syncStarted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var syncRelease = new TaskCompletionSource<IReadOnlyList<CatalogGame>>(TaskCreationOptions.RunContinuationsAsynchronously);
+        provider.Setup(x => x.GetCurrentYearGamesAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .Callback(() => syncStarted.SetResult(true))
+            .Returns(syncRelease.Task);
+        var repository = new Mock<IGameRepository>();
+        var services = new ServiceCollection().AddScoped(_ => provider.Object).AddScoped(_ => repository.Object).BuildServiceProvider();
+        var service = new GameCatalogStartupSync(services.GetRequiredService<IServiceScopeFactory>(),
+            new TestHostEnvironment { EnvironmentName = Environments.Development },
+            Microsoft.Extensions.Options.Options.Create(new GameCatalogOptions { EnableDevelopmentStartupSync = true }),
+            NullLogger<GameCatalogStartupSync>.Instance);
+
+        var startup = service.StartAsync(CancellationToken.None);
+        await syncStarted.Task;
+
+        Assert.That(startup.IsCompletedSuccessfully, Is.True);
+
+        syncRelease.SetResult([]);
+        await service.StopAsync(CancellationToken.None);
     }
 
     private sealed class TestHostEnvironment : IHostEnvironment

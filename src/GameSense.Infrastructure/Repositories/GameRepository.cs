@@ -9,11 +9,16 @@ namespace GameSense.Infrastructure.Repositories;
 public sealed class GameRepository(GameSenseDbContext db) : IGameRepository
 {
     public Task<Game?> GetWithReviewsAsync(int id, CancellationToken cancellationToken = default) =>
-        db.Games.AsNoTracking().Include(g => g.Franchise).Include(g => g.Reviews).ThenInclude(r => r.User)
-            .SingleOrDefaultAsync(g => g.Id == id, cancellationToken);
+        db.Games.AsNoTracking()
+        .Include(g => g.Franchise)
+        .Include(g => g.Reviews)
+        .ThenInclude(r => r.User)
+        .SingleOrDefaultAsync(g => g.Id == id, cancellationToken);
 
     public async Task<IReadOnlyList<Game>> GetByIdsAsync(IEnumerable<int> ids, CancellationToken cancellationToken = default) =>
-        await db.Games.AsNoTracking().Where(g => ids.Contains(g.Id)).ToListAsync(cancellationToken);
+        await db.Games.AsNoTracking()
+        .Where(g => ids.Contains(g.Id))
+        .ToListAsync(cancellationToken);
 
     public async Task<IReadOnlyList<Game>> UpsertCatalogGamesAsync(IEnumerable<CatalogGame> catalogGames, CancellationToken cancellationToken = default)
     {

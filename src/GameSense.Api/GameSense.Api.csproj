@@ -23,5 +23,11 @@
     <ProjectReference Include="..\GameSense.Core\GameSense.Core.csproj" />
     <ProjectReference Include="..\GameSense.Infrastructure\GameSense.Infrastructure.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Handlers\Gotys\" />
+    <Folder Include="Handlers\Reviews\" />
+    <Folder Include="Handlers\Quizes\" />
+    <Folder Include="Handlers\Users\" />
+  </ItemGroup>
 
 </Project>
