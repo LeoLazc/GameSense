@@ -1,8 +1,9 @@
 export type Question = { id: number; categoryId: number; difficulty: number; questionText: string; questionWeight: number }
 export type Progress = { answered: number; total: number }
-export type Session = { id: number; startedAt: string; completedAt: string | null; status: string; finalScore: number | null; questions: Question[]; progress: Progress }
+export type AnswerSubmission = { questionId: number; answerText: string }
+export type Session = { id: number; startedAt: string; completedAt: string | null; status: string; finalScore: number | null; questions: Question[]; progress: Progress; answers: AnswerSubmission[] }
 export type QuizResult = { id: number; startedAt: string; completedAt: string | null; status: string; finalScore: number | null; expertiseScore: number | null; answers: unknown[] }
-export type AnswerResponse = { completed: boolean; progress: Progress; nextQuestion: Question | null; result: QuizResult | null }
+export type AnswerResponse = { completed: boolean; progress: Progress; result: QuizResult | null }
 
 export type QuizView = 'welcome' | 'question' | 'evaluating' | 'error' | 'result'
 

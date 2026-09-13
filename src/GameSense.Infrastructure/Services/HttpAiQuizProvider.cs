@@ -21,20 +21,14 @@ public sealed class HttpAiQuizProvider : IAiQuizProvider
         _path = configuration["Ai:QuizEvaluationPath"] ?? "quiz/evaluate";
     }
 
-    public async Task<QuizEvaluation> EvaluateAsync(
-        string questionText,
-        string expectedAnswer,
-        string evaluationCriteria,
-        string userAnswer,
+    public async Task<QuizBatchEvaluation> EvaluateBatchAsync(
+        IReadOnlyList<QuizBatchAnswer> answers,
         CancellationToken cancellationToken = default)
     {
         var payload = JsonSerializer.Serialize(new
         {
-            instructions = EvaluationInstructions,
-            questionText,
-            expectedAnswer,
-            evaluationCriteria,
-            userAnswer
+            instructions = EvaluationInstructions + " Return one combined evaluation for all answers.",
+            answers
         });
 
         using var request = new HttpRequestMessage(HttpMethod.Post, _path)
@@ -64,7 +58,7 @@ public sealed class HttpAiQuizProvider : IAiQuizProvider
             result.Score is < 0m or > 100m || result.Confidence is < 0m or > 1m)
             throw new AiResponseParseException("The quiz AI provider returned an invalid normalized evaluation.");
 
-        return new QuizEvaluation(result.Score.Value, result.Confidence.Value, result.Evaluation);
+        return new QuizBatchEvaluation(result.Score.Value, result.Confidence.Value, result.Evaluation);
     }
 
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };

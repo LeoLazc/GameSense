@@ -9,7 +9,7 @@ namespace GameSense.Api.Tests.Services;
 public sealed class ReviewEligibilityPolicyTests
 {
     [TestCase(null)]
-    [TestCase(89.99)]
+    [TestCase(59.99)]
     public void EnsureEligible_rejects_missing_or_insufficient_expertise(decimal? score)
     {
         Assert.Throws<ExpertiseEligibilityException>(() => new ReviewEligibilityPolicy().EnsureEligible(
@@ -17,8 +17,8 @@ public sealed class ReviewEligibilityPolicyTests
     }
 
     [Test]
-    public void EnsureEligible_accepts_score_of_90()
+    public void EnsureEligible_accepts_score_of_60()
     {
-        Assert.DoesNotThrow(() => new ReviewEligibilityPolicy().EnsureEligible(new User { ExpertiseScore = 90m }));
+        Assert.DoesNotThrow(() => new ReviewEligibilityPolicy().EnsureEligible(new User { ExpertiseScore = 60m }));
     }
 }

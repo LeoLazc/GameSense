@@ -4,12 +4,12 @@ namespace GameSense.Core.Services;
 
 public interface IQuizSessionService
 {
-    Task<QuizAnswerSubmissionResult?> SubmitAnswerAsync(
+    Task<QuizAnswerSubmissionResult?> SubmitAnswersAsync(
         int userId,
         int sessionId,
-        int questionId,
-        string answerText,
+        IReadOnlyList<QuizAnswerSubmission> answers,
         CancellationToken cancellationToken = default);
+
 }
 
 public sealed record QuizAnswerSubmissionResult(
@@ -18,3 +18,5 @@ public sealed record QuizAnswerSubmissionResult(
     int Answered,
     int Total,
     bool Completed);
+
+public sealed record QuizAnswerSubmission(int QuestionId, string AnswerText);

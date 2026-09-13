@@ -20,6 +20,26 @@ internal static class QuizMapping
     public static QuizResultDto Result(IMapper mapper, QuizSession session) => mapper.Map<QuizResultDto>(session);
 }
 
+public sealed class SubmitQuizAnswersHandler(IQuizSessionService quizSessions, IMapper mapper) : IRequestHandler<SubmitQuizAnswersCommand, QuizAnswerResponseDto?>
+{
+    public async Task<QuizAnswerResponseDto?> Handle(SubmitQuizAnswersCommand request, CancellationToken ct)
+    {
+        var result = await quizSessions.SubmitAnswersAsync(
+            request.UserId,
+            request.SessionId,
+            request.Answers.Select(answer => new QuizAnswerSubmission(answer.QuestionId, answer.AnswerText)).ToList(),
+            ct);
+
+        if (result == null) return null;
+
+        return new QuizAnswerResponseDto(
+            result.Completed,
+            new QuizProgressDto(result.Answered, result.Total),
+            null,
+            result.Completed ? QuizMapping.Result(mapper, result.Session) : null);
+    }
+}
+
 internal static class QuizOrdering
 {
     public static IReadOnlyList<Question> ForSession(IReadOnlyList<Question> questions, int sessionId)
@@ -53,22 +73,6 @@ public sealed class StartQuizHandler(IQuizRepository quizzes, IMapper mapper) : 
             ?? throw new QuizConflictException("The quiz session could not be reloaded after creating its question snapshot.");
         var persistedQuestions = persistedSession.QuizSessionQuestions.OrderBy(sq => sq.Order).Select(sq => sq.Question!).ToList();
         return QuizMapping.Session(mapper, persistedSession, persistedQuestions);
-    }
-}
-
-public sealed class SubmitQuizAnswerHandler(IQuizSessionService quizSessions, IMapper mapper) : IRequestHandler<SubmitQuizAnswerCommand, QuizAnswerResponseDto?>
-{
-    public async Task<QuizAnswerResponseDto?> Handle(SubmitQuizAnswerCommand request, CancellationToken ct)
-    {
-        var result = await quizSessions.SubmitAnswerAsync(request.UserId, request.SessionId, request.QuestionId, request.AnswerText, ct);
-        if (result == null) return null;
-
-        var progress = new QuizProgressDto(result.Answered, result.Total);
-        return new QuizAnswerResponseDto(
-            result.Completed,
-            progress,
-            result.NextQuestion == null ? null : QuizMapping.Question(mapper, result.NextQuestion),
-            result.Completed ? QuizMapping.Result(mapper, result.Session) : null);
     }
 }
 

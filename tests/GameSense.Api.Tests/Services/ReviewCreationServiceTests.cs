@@ -13,7 +13,7 @@ public sealed class ReviewCreationServiceTests
     [Test]
     public async Task CreateAsync_trims_fields_and_persists_authenticated_user()
     {
-        var user = new User { Id = 7, Username = "expert", ExpertiseScore = 90m };
+        var user = new User { Id = 7, Username = "expert", ExpertiseScore = 60m };
         var users = new Mock<IUserRepository>();
         users.Setup(x => x.GetByIdAsync(7, It.IsAny<CancellationToken>())).ReturnsAsync(user);
         var games = new Mock<IGameRepository>();
@@ -29,6 +29,21 @@ public sealed class ReviewCreationServiceTests
         Assert.That(result.Content, Is.EqualTo("Content"));
         reviews.Verify(x => x.AddAsync(result, It.IsAny<CancellationToken>()), Times.Once);
         reviews.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Test]
+    public void CreateAsync_rejects_expertise_score_below_60()
+    {
+        var users = new Mock<IUserRepository>();
+        users.Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new User { Id = 1, ExpertiseScore = 59.99m });
+
+        Assert.ThrowsAsync<ExpertiseEligibilityException>(() => new ReviewCreationService(
+                users.Object,
+                Mock.Of<IGameRepository>(),
+                Mock.Of<IReviewRepository>(),
+                new ReviewEligibilityPolicy())
+            .CreateAsync(1, 2, "Title", "Content", 90));
     }
 
     [Test]

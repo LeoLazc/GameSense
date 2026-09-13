@@ -7,59 +7,61 @@ namespace GameSense.Api.Services;
 
 public sealed class QuizSessionService(
     IQuizRepository quizzes,
-    IQuizAnswerEvaluator evaluator,
-    IQuizScoringPolicy scoringPolicy) : IQuizSessionService
+    IAiQuizProvider batchEvaluator) : IQuizSessionService
 {
-    public async Task<QuizAnswerSubmissionResult?> SubmitAnswerAsync(
+    public async Task<QuizAnswerSubmissionResult?> SubmitAnswersAsync(
         int userId,
         int sessionId,
-        int questionId,
-        string answerText,
+        IReadOnlyList<QuizAnswerSubmission> answers,
         CancellationToken cancellationToken = default)
     {
         var session = await quizzes.GetSessionAsync(sessionId, userId, cancellationToken);
         if (session == null) return null;
         if (session.Status != QuizSessionStatuses.InProgress)
             throw new QuizConflictException("The quiz session is not in progress.");
-
-        var snapshotQuestions = session.QuizSessionQuestions
+        var questions = session.QuizSessionQuestions
             .OrderBy(snapshot => snapshot.Order)
             .Select(snapshot => snapshot.Question!)
             .ToList();
-        if (await quizzes.HasAnswerAsync(sessionId, questionId, cancellationToken))
-            throw new QuizConflictException("This question has already been answered.");
+        var questionIds = questions.Select(question => question.Id).ToHashSet();
+        if (answers.Count != questions.Count || answers.Select(answer => answer.QuestionId).Distinct().Count() != answers.Count ||
+            answers.Any(answer => !questionIds.Contains(answer.QuestionId)))
+            throw new QuizConflictException("The submitted answers must contain each quiz question exactly once.");
 
-        var question = snapshotQuestions.SingleOrDefault(candidate => candidate.Id == questionId);
-        if (question == null)
-            throw new QuizConflictException("The question is not part of this quiz session.");
+        if (session.QuizAnswers.Count > 0)
+            throw new QuizConflictException("This quiz session already contains submitted answers.");
 
-        var evaluation = await evaluator.EvaluateAsync(question, answerText, cancellationToken);
-        await quizzes.AddAnswerAsync(new QuizAnswer
+        var answerByQuestionId = answers.ToDictionary(answer => answer.QuestionId);
+        var evaluation = await batchEvaluator.EvaluateBatchAsync(
+            questions.Select(question => new QuizBatchAnswer(
+                question.Id,
+                question.QuestionText,
+                question.ExpectedAnswer,
+                question.EvaluationCriteria,
+                answerByQuestionId[question.Id].AnswerText)).ToList(),
+            cancellationToken);
+
+        foreach (var question in questions)
         {
-            QuizSessionId = session.Id,
-            QuestionId = question.Id,
-            AnswerText = answerText.Trim(),
-            AiScore = evaluation.Score,
-            AiConfidence = evaluation.Confidence,
-            AiEvaluation = evaluation.Evaluation
-        }, cancellationToken);
-
-        session = await quizzes.GetSessionAsync(sessionId, userId, cancellationToken)
-            ?? throw new QuizConflictException("The quiz session could not be reloaded after recording the answer.");
-        var answered = session.QuizAnswers.Count;
-        if (answered == snapshotQuestions.Count)
-        {
-            var expertiseScore = scoringPolicy.Calculate(snapshotQuestions, session.QuizAnswers.ToList());
-            session.FinalScore = expertiseScore;
-            if (session.User != null) session.User.ExpertiseScore = expertiseScore;
-            session.Status = QuizSessionStatuses.Completed;
-            session.CompletedAt = DateTime.UtcNow;
-            await quizzes.SaveChangesAsync(cancellationToken);
-            return new QuizAnswerSubmissionResult(session, null, answered, snapshotQuestions.Count, true);
+            await quizzes.AddAnswerAsync(new QuizAnswer
+            {
+                QuizSessionId = session.Id,
+                QuestionId = question.Id,
+                AnswerText = answerByQuestionId[question.Id].AnswerText.Trim(),
+                AiScore = evaluation.Score,
+                AiConfidence = evaluation.Confidence,
+                AiEvaluation = evaluation.Evaluation
+            }, cancellationToken);
         }
 
-        var nextQuestion = snapshotQuestions.FirstOrDefault(candidate =>
-            session.QuizAnswers.All(answer => answer.QuestionId != candidate.Id));
-        return new QuizAnswerSubmissionResult(session, nextQuestion, answered, snapshotQuestions.Count, false);
+        session = await quizzes.GetSessionAsync(sessionId, userId, cancellationToken)
+            ?? throw new QuizConflictException("The quiz session could not be reloaded after recording the answers.");
+        session.FinalScore = evaluation.Score;
+        if (session.User != null) session.User.ExpertiseScore = evaluation.Score;
+        session.Status = QuizSessionStatuses.Completed;
+        session.CompletedAt = DateTime.UtcNow;
+        await quizzes.SaveChangesAsync(cancellationToken);
+
+        return new QuizAnswerSubmissionResult(session, null, questions.Count, questions.Count, true);
     }
 }

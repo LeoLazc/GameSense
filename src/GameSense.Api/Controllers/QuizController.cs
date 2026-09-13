@@ -16,9 +16,9 @@ public sealed class QuizController(IMediator mediator) : ControllerBase
     public async Task<ActionResult<QuizSessionDto>> Start(CancellationToken ct) => Ok(await mediator.Send(new StartQuizCommand(UserId), ct));
 
     [HttpPost("sessions/{sessionId:int}/answers")]
-    public async Task<ActionResult<QuizAnswerResponseDto>> Submit(int sessionId, SubmitQuizAnswerDto dto, CancellationToken ct)
+    public async Task<ActionResult<QuizAnswerResponseDto>> Submit(int sessionId, SubmitQuizAnswersRequest request, CancellationToken ct)
     {
-        var result = await mediator.Send(new SubmitQuizAnswerCommand(UserId, sessionId, dto.QuestionId, dto.AnswerText), ct);
+        var result = await mediator.Send(new SubmitQuizAnswersCommand(UserId, sessionId, request.Answers), ct);
         return result == null ? NotFound() : Ok(result);
     }
 
