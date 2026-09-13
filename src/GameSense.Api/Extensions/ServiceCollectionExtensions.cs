@@ -30,7 +30,7 @@ namespace GameSense.Api.Extensions
         {
             // FluentValidation
             services.AddFluentValidationAutoValidation();
-            services.AddValidatorsFromAssemblyContaining<CreateReviewRequestValidator>();
+            services.AddValidatorsFromAssemblyContaining<CreateReviewCommandValidator>();
 
             // MediatR (scan this assembly for handlers)
             services.AddMediatR(typeof(ServiceCollectionExtensions).Assembly);
@@ -101,7 +101,6 @@ namespace GameSense.Api.Extensions
             services.AddScoped<IGameRepository, GameRepository>();
             services.AddScoped<IReviewRepository, ReviewRepository>();
             services.AddScoped<IGotyPredictionRepository, GotyPredictionRepository>();
-            services.AddScoped<IQuizAnswerEvaluator, KnowledgeQuizAnswerEvaluator>();
             services.AddScoped<IQuizSessionService, QuizSessionService>();
             services.AddScoped<IQuizScoringPolicy, QuizScoringPolicy>();
             services.AddScoped<IReviewEligibilityPolicy, ReviewEligibilityPolicy>();

@@ -11,8 +11,8 @@ public sealed class ReviewEligibilityPolicy : IReviewEligibilityPolicy
 {
     public void EnsureEligible(User? user)
     {
-        if (user?.ExpertiseScore is not decimal score || score < 90m)
-            throw new ExpertiseEligibilityException("An ExpertiseScore of at least 90 is required to review videogames.");
+        if (user?.ExpertiseScore is not decimal score || score < 60m)
+            throw new ExpertiseEligibilityException("An ExpertiseScore of at least 60 is required to review videogames.");
     }
 }
 

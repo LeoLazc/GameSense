@@ -39,9 +39,23 @@ public sealed class OpenAiQuizProviderTests
         var provider = new OpenAiQuizProvider(ClientReturning(
             """{"score": 88.5, "confidence": 0.91, "evaluation": "Respuesta muy completa."}"""));
 
-        var result = await provider.EvaluateAsync("Question", "Expected", "Criteria", "Answer");
+        var result = await provider.EvaluateBatchAsync(Answers());
 
-        Assert.That(result, Is.EqualTo(new QuizEvaluation(88.5m, 0.91m, "Respuesta muy completa.")));
+        Assert.That(result, Is.EqualTo(new QuizBatchEvaluation(88.5m, 0.91m, "Respuesta muy completa.")));
+    }
+
+    [Test]
+    public async Task Returns_a_valid_combined_batch_result()
+    {
+        var provider = new OpenAiQuizProvider(ClientReturning(
+            """{"score": 91, "confidence": 0.94, "evaluation": "Resultado global."}"""));
+
+        var result = await provider.EvaluateBatchAsync([
+            new QuizBatchAnswer(1, "Question 1", "Expected 1", "Criteria 1", "Answer 1"),
+            new QuizBatchAnswer(2, "Question 2", "Expected 2", "Criteria 2", "Answer 2")
+        ]);
+
+        Assert.That(result, Is.EqualTo(new QuizBatchEvaluation(91m, 0.94m, "Resultado global.")));
     }
 
     [TestCase("not json")]
@@ -52,7 +66,7 @@ public sealed class OpenAiQuizProviderTests
     {
         var provider = new OpenAiQuizProvider(ClientReturning(body));
 
-        Assert.ThrowsAsync<AiResponseParseException>(() => provider.EvaluateAsync("Q", "E", "C", "A"));
+        Assert.ThrowsAsync<AiResponseParseException>(() => provider.EvaluateBatchAsync(Answers()));
     }
 
     [Test]
@@ -60,7 +74,7 @@ public sealed class OpenAiQuizProviderTests
     {
         var provider = new OpenAiQuizProvider(ClientReturning(""));
 
-        Assert.ThrowsAsync<AiResponseParseException>(() => provider.EvaluateAsync("Q", "E", "C", "A"));
+        Assert.ThrowsAsync<AiResponseParseException>(() => provider.EvaluateBatchAsync(Answers()));
     }
 
     [Test]
@@ -69,7 +83,7 @@ public sealed class OpenAiQuizProviderTests
         var provider = new OpenAiQuizProvider(ClientReturning(
             """{"score": 50, "confidence": 0.5, "evaluation": "ok"}""", finishReason: ChatFinishReason.Length));
 
-        Assert.ThrowsAsync<AiResponseParseException>(() => provider.EvaluateAsync("Q", "E", "C", "A"));
+        Assert.ThrowsAsync<AiResponseParseException>(() => provider.EvaluateBatchAsync(Answers()));
     }
 
     [Test]
@@ -77,7 +91,7 @@ public sealed class OpenAiQuizProviderTests
     {
         var provider = new OpenAiQuizProvider(FailingClient());
 
-        Assert.ThrowsAsync<AiResponseParseException>(() => provider.EvaluateAsync("Q", "E", "C", "A"));
+        Assert.ThrowsAsync<AiResponseParseException>(() => provider.EvaluateBatchAsync(Answers()));
     }
 
     [Test]
@@ -89,7 +103,7 @@ public sealed class OpenAiQuizProviderTests
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
 
-        Assert.CatchAsync<OperationCanceledException>(() => provider.EvaluateAsync("Q", "E", "C", "A", cancellation.Token));
+        Assert.CatchAsync<OperationCanceledException>(() => provider.EvaluateBatchAsync(Answers(), cancellation.Token));
     }
 
     private static ChatClient ClientReturning(string content, ChatFinishReason finishReason = ChatFinishReason.Stop) =>
@@ -164,4 +178,9 @@ public sealed class OpenAiQuizProviderTests
             public override bool TryGetValues(string name, out IEnumerable<string>? values) { values = null; return false; }
         }
     }
+
+    private static IReadOnlyList<QuizBatchAnswer> Answers() =>
+    [
+        new(1, "Question", "Expected", "Criteria", "Answer")
+    ];
 }

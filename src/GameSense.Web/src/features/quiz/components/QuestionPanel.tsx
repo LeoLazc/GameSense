@@ -7,6 +7,7 @@ export function QuestionPanel({ session, evaluating, onSubmit }: { session: Sess
   const question = currentQuestion(session)
   const [answer, setAnswer] = useState('')
   const progress = progressPercent(session.progress)
+  const isLastQuestion = session.progress.answered + 1 === session.progress.total
   useEffect(() => setAnswer(''), [question?.id])
   if (!question) return <ErrorPanel message="No hay ninguna pregunta disponible para la evaluación actual." onRetry={() => undefined} />
   const submit = (event: FormEvent<HTMLFormElement>) => {
@@ -53,12 +54,12 @@ export function QuestionPanel({ session, evaluating, onSubmit }: { session: Sess
         {evaluating ? (
           <div className="evaluating" role="status" aria-live="polite">
             <span className="signal-pulse" />
-            Evaluando respuesta
+            Enviando evaluación completa
             <span className="loading-dots">...</span>
           </div>
         ) : (
           <button className="primary-button submit-button" disabled={!answer.trim()}>
-            Enviar respuesta <span aria-hidden="true">→</span>
+            {isLastQuestion ? 'Enviar evaluación' : 'Guardar respuesta'} <span aria-hidden="true">→</span>
           </button>
         )}
         <p className="privacy-note">

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { ApiError } from '../../../services/httpClient'
 import { quizSessionStorage } from '../../../services/storage/quizSessionStorage'
-import { QuizResult, Session } from '../types'
+import { AnswerSubmission, QuizResult, Session } from '../types'
 import { quizApi } from '../services/quizApi'
 import { currentQuestion, QuizView } from '../types'
 
@@ -31,8 +31,9 @@ export function useQuiz(token: string | undefined, onUnauthorized: () => void) {
     setError('')
     try {
       const next = await quizApi.start(token)
-      quizSessionStorage.save(next)
-      setSession(next)
+      const started: Session = { ...next, answers: [] }
+      quizSessionStorage.save(started)
+      setSession(started)
       setView(next.questions.length ? 'question' : 'error')
       if (!next.questions.length) setError('Esta evaluación aún no tiene preguntas disponibles.')
     } catch (error) {
@@ -64,18 +65,38 @@ export function useQuiz(token: string | undefined, onUnauthorized: () => void) {
   const resume = () => {
     if (!session) return begin()
     if (session.progress.answered === session.progress.total) return void loadResult()
+    if (session.answers.length !== session.progress.answered) {
+      setError('La evaluación guardada no contiene todas las respuestas. Vuelve a iniciar la evaluación.')
+      setView('error')
+      return
+    }
     if (session.questions.length) setView('question')
     else { setError('La evaluación guardada está vacía. Vuelve al inicio de cualificación o cierra sesión.'); setView('error') }
   }
 
   const submit = async (answerText: string) => {
     if (!token || !session) return
-    setView('evaluating')
     setError('')
     try {
       const question = currentQuestion(session)
-      const response = await quizApi.submitAnswer(token, session.id, question?.id || 0, answerText)
-      const updated: Session = { ...session, progress: response.progress, completedAt: response.completed ? new Date().toISOString() : null, status: response.completed ? 'Completed' : session.status }
+      if (!question) return
+      const answers: AnswerSubmission[] = [...session.answers, { questionId: question.id, answerText }]
+      const isLastAnswer = answers.length === session.progress.total
+      if (!isLastAnswer) {
+        const updated: Session = {
+          ...session,
+          answers,
+          progress: { ...session.progress, answered: answers.length }
+        }
+        quizSessionStorage.save(updated)
+        setSession(updated)
+        setView('question')
+        return
+      }
+
+      setView('evaluating')
+      const response = await quizApi.submitAnswers(token, session.id, answers)
+      const updated: Session = { ...session, answers, progress: response.progress, completedAt: response.completed ? new Date().toISOString() : null, status: response.completed ? 'Completed' : session.status }
       quizSessionStorage.save(updated)
       setSession(updated)
       if (response.completed) {

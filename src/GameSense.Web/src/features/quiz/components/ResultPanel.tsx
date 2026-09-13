@@ -2,7 +2,7 @@ import { QuizResult } from '../types'
 
 export function ResultPanel({ result, onReturnHome }: { result: QuizResult; onReturnHome: () => void }) {
   const score = result.expertiseScore ?? result.finalScore
-  const passed = score !== null && score >= 90
+  const passed = score !== null && score >= 60
 
   return (
     <section className="result-layout">
@@ -20,7 +20,7 @@ export function ResultPanel({ result, onReturnHome }: { result: QuizResult; onRe
         <div className="score-line">
           <span>PUNTUACIÓN DE CONOCIMIENTO</span>
           <strong>{score === null ? '—' : score.toFixed(1)}</strong>
-          <small>UMBRAL / 90.0</small>
+          <small>UMBRAL / 60.0</small>
         </div>
         <div className="report-rule" />
         <button className="primary-button" onClick={onReturnHome}>
