@@ -29,6 +29,15 @@ public sealed class GamesController(IMediator mediator, IGameCatalogProvider cat
         return Ok(localGames.Select(ToCatalogDto).ToArray());
     }
 
+    [AllowAnonymous, HttpGet("recent")]
+    public async Task<ActionResult<IReadOnlyList<GameCatalogResponseDto>>> Recent([FromQuery] int limit = 10, CancellationToken cancellationToken = default)
+    {
+        if (limit <= 0) return BadRequest("Limit must be greater than zero.");
+
+        var recentGames = await games.GetRecentAsync(Math.Min(limit, 10), DateTime.UtcNow, cancellationToken);
+        return Ok(recentGames.Select(ToCatalogDto).ToArray());
+    }
+
     [AllowAnonymous, HttpGet("{id:int}")]
     public async Task<ActionResult<GameResponseDto>> Get(int id, CancellationToken cancellationToken)
     {

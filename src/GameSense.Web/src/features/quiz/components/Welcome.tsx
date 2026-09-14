@@ -8,20 +8,13 @@ export function Welcome({ username, session, onStart, onResume, pending, error }
   return (
     <section className="welcome-layout">
       <div className="margin-copy">
-        <span>REGISTRO DE REVISOR / {username.toUpperCase()}</span>
-        <h1>Establece tu elegibilidad.</h1>
+        <h1>ESTÁS LISTO?.</h1>
         <p>
-          Cada cuenta dispone de un único intento de evaluación. Responde cada pregunta con tus
-          propias palabras; el servicio evalúa la respuesta después del envío.
+          Dispones de un único intento de evaluación. Responde cada pregunta con tus
+          propias palabras y nosotros nos encargamos de evaluarte.
         </p>
       </div>
       <div className="welcome-panel">
-        <div className="panel-heading">
-          <span>PUERTA DE CONOCIMIENTO / {completed ? 'COMPLETA' : 'LISTA'}</span>
-          <h2>
-            {hasResume ? (completed ? 'Evaluación completada' : 'Evaluación registrada') : 'Un único intento de evaluación'}
-          </h2>
-        </div>
         {hasResume && (
           <div className="resume-line">
             <span className="detent active" />
@@ -32,9 +25,6 @@ export function Welcome({ username, session, onStart, onResume, pending, error }
               <small>Iniciada el {new Date(session.startedAt).toLocaleDateString()}</small>
             </div>
           </div>
-        )}
-        {!hasResume && (
-          <p className="attempt-note">Esta cuenta puede comenzar ahora su único intento de evaluación.</p>
         )}
         {error && <Status message={error} tone="error" />}
         <button className="primary-button" onClick={hasResume ? onResume : onStart} disabled={pending}>

@@ -18,7 +18,6 @@ export function QuestionPanel({ session, evaluating, onSubmit }: { session: Sess
   return (
     <section className="quiz-layout">
       <aside className="progress-rail">
-        <span>EVALUACIÓN / ACTIVA</span>
         <strong>
           {String(session.progress.answered + 1).padStart(2, '0')}{' '}
           <small>/ {String(session.progress.total).padStart(2, '0')}</small>
@@ -35,7 +34,6 @@ export function QuestionPanel({ session, evaluating, onSubmit }: { session: Sess
       <form className="question-panel" onSubmit={submit}>
         <div className="question-meta">
           <span>PREGUNTA {String(session.progress.answered + 1).padStart(2, '0')}</span>
-          <span>DIFICULTAD {question.difficulty}</span>
         </div>
         <h1>{question.questionText}</h1>
         <label className="answer-label" htmlFor="answer">

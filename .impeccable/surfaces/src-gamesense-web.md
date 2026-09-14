@@ -6,16 +6,16 @@ related_targets: []
 ---
 
 ## Scope
-Operate surface: the GameSense web flows, from authentication through reviewer qualification: sign-in/register, the main hub, the reviewer profile, and the quiz.
+Operate surface: the GameSense web flows, from authentication through reviewer qualification: sign-in/register, the release hub, videogame detail, reviewer profile, and the quiz.
 
 ## Job and audience
 Gaming reviewers need to complete a trustworthy knowledge assessment, understand whether they are eligible to review, and manage the account behind that eligibility.
 
 ## Outcome and proof
-The user signs in or registers, lands on the main hub, opens the quiz from it, starts or resumes a real API-backed quiz, submits one answer at a time, and receives an honest scored result. The top bar shows the username and opens the profile, which shows the reviewer record and the sign-out control. No expected answers or evaluation rules appear in the client.
+The user signs in or registers, lands on a real API-backed carousel of released games, opens a videogame detail page with community reviews, and can continue to the quiz. The top bar keeps the username at the far right: click opens the profile, while hover or keyboard focus reveals sign-out. No expected answers or evaluation rules appear in the client.
 
 ## Direction
-Reviewer qualification console: a ruling-engine layout with a compact graphite instrument surface, bone-white reading field, hairline rules, and one restrained signal accent. The question panel is the fixed centre rail; progress and state annotations sit in the margin. The focal moment is the answer becoming an assessed record, not a game reward.
+Reviewer qualification console extended into an editorial game index: compact graphite instrument surface, bone-white reading field, hairline rules, and one restrained signal accent. The home carousel is the dominant reading surface; the videogame page separates image evidence from title, metadata, and reviews. Qualification remains a ruling-engine layout. The focal moment is choosing a real game to inspect, then turning knowledge into an assessed record.
 
 ## Direction contract
 THESIS: Make reviewer qualification feel like a precise assessment report, refusing game-like rewards and dashboard-card sprawl.
