@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "appRoot": "C:\\Users\\laio_\\source\\repos\\GameSense AI\\src\\GameSense.Web",
+  "repoRoot": "C:\\Users\\laio_\\source\\repos\\GameSense AI",
+  "contextRoot": "C:\\Users\\laio_\\source\\repos\\GameSense AI",
+  "sessionRoot": "C:\\Users\\laio_\\source\\repos\\GameSense AI\\src\\GameSense.Web\\.impeccable\\live",
+  "productPath": "C:\\Users\\laio_\\source\\repos\\GameSense AI\\PRODUCT.md",
+  "designPath": "C:\\Users\\laio_\\source\\repos\\GameSense AI\\DESIGN.md",
+  "resolvedFrom": "target:src\\GameSense.Web"
+}

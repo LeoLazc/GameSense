@@ -19,19 +19,18 @@ export function AuthPanel({ onSubmit, pending, error }: { onSubmit: (mode: AuthM
   return (
     <section className="auth-layout">
       <div className="margin-copy">
-        <span>PUNTO DE ACCESO</span>
-        <h1>La cualificación comienza con un registro claro.</h1>
+        <h1>GameSense</h1>
         <p>
-          GameSense verifica los conocimientos del revisor antes de habilitar las reseñas. Tu
-          evaluación queda vinculada a tu cuenta.
+          Comprueba tu conocimientos en videojuegos,
         </p>
+        <p> luego puntúa y reseña.</p>
       </div>
       <form className="form-panel" onSubmit={submit}>
         <div className="panel-heading">
           <span>
-            IDENTIDAD / {mode === 'login' ? 'REVISOR EXISTENTE' : 'NUEVO REVISOR'}
+            {mode === 'login' ? 'LOGIN' : 'REGISTRO'}
           </span>
-          <h2>{mode === 'login' ? 'Inicia sesión para continuar' : 'Crea tu registro de revisor'}</h2>
+          <h2>{mode === 'login' ? 'Inicia sesión para continuar' : 'Registrate y comienza tu aventura'}</h2>
         </div>
         {mode === 'register' && (
           <>
@@ -70,7 +69,7 @@ export function AuthPanel({ onSubmit, pending, error }: { onSubmit: (mode: AuthM
           className="quiet-button"
           onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
         >
-          {mode === 'login' ? 'Crear un nuevo registro de revisor' : 'Ya tengo una cuenta'}
+          {mode === 'login' ? 'no tienes un usuario? Registrate aquí' : 'Ya tengo una cuenta'}
         </button>
       </form>
     </section>

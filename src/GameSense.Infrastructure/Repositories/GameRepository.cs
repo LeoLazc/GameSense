@@ -15,6 +15,15 @@ public sealed class GameRepository(GameSenseDbContext db) : IGameRepository
         .ThenInclude(r => r.User)
         .SingleOrDefaultAsync(g => g.Id == id, cancellationToken);
 
+    public async Task<IReadOnlyList<Game>> GetRecentAsync(int limit, DateTime releasedBefore, CancellationToken cancellationToken = default) =>
+        await db.Games.AsNoTracking()
+            .Include(g => g.Franchise)
+            .Where(g => g.ReleasedAt != null && g.ReleasedAt <= releasedBefore)
+            .OrderByDescending(g => g.ReleasedAt)
+            .ThenByDescending(g => g.Id)
+            .Take(limit)
+            .ToListAsync(cancellationToken);
+
     public async Task<IReadOnlyList<Game>> GetByIdsAsync(IEnumerable<int> ids, CancellationToken cancellationToken = default) =>
         await db.Games.AsNoTracking()
         .Where(g => ids.Contains(g.Id))

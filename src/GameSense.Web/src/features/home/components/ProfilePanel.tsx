@@ -23,22 +23,13 @@ export function ProfilePanel({
   return (
     <section className="profile-layout">
       <div className="margin-copy">
-        <span>PERFIL DE REVISOR</span>
-        <h1>Tu registro de revisor.</h1>
+        <h1>Tu Perfil</h1>
         <p>
-          Los datos de tu cuenta identifican tus evaluaciones y reseñas dentro de GameSense.
+          Aquí podrás ver tus datos y tu puntaje como revisor.
         </p>
       </div>
       <div className="profile-panel">
-        <div className="panel-heading">
-          <span>IDENTIDAD / CUENTA</span>
-          <h2>{username}</h2>
-        </div>
         <dl className="profile-fields">
-          <div className="profile-row">
-            <dt>ID de usuario</dt>
-            <dd>{userId}</dd>
-          </div>
           <div className="profile-row">
             <dt>Nombre de usuario</dt>
             <dd>{username}</dd>

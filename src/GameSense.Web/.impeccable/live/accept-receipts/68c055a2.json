@@ -1,0 +1,11 @@
+{
+  "id": "68c055a2",
+  "operation": "discard",
+  "variantId": null,
+  "result": {
+    "handled": true,
+    "file": "src\\features\\auth\\components\\AuthPanel.tsx",
+    "carbonize": false
+  },
+  "completedAt": "2026-09-13T23:18:11.279Z"
+}

@@ -10,12 +10,12 @@ export function ResultPanel({ result, onReturnHome }: { result: QuizResult; onRe
         {passed ? 'APTO' : 'NO APTO'}
       </div>
       <div className="result-report">
-        <span>INFORME DE EVALUACIÓN / FINAL</span>
-        <h1>{passed ? 'Elegibilidad de revisión confirmada.' : 'Elegibilidad de revisión no alcanzada.'}</h1>
+        <span>INFORME DE EVALUACIÓN FINAL</span>
+        <h1>{passed ? 'Felicitaciones! ahora puedes reseñar y puntuar videojuegos.' : 'Lamentamos que no hayas aprobado, pero puedes intentar nuevamente mañana.'}</h1>
         <p>
           {passed
-            ? 'Tu conocimiento demostrado alcanza el umbral de cualificación de GameSense. Este resultado queda registrado en tu cuenta.'
-            : 'Tu conocimiento demostrado está por debajo del umbral de cualificación actual. Este resultado queda registrado en tu cuenta; la política de un único intento no permite otra evaluación.'}
+            ? 'Admiramos tu conocimiento! Ahora puedes reseñar y puntuar videojuegos.'
+            : 'Siempre hay lugar para mejorar. Puedes seguir explorando videojuegos.'}
         </p>
         <div className="score-line">
           <span>PUNTUACIÓN DE CONOCIMIENTO</span>
@@ -24,7 +24,7 @@ export function ResultPanel({ result, onReturnHome }: { result: QuizResult; onRe
         </div>
         <div className="report-rule" />
         <button className="primary-button" onClick={onReturnHome}>
-          Volver al inicio de cualificación
+          Volver al inicio del Quiz
         </button>
       </div>
     </section>

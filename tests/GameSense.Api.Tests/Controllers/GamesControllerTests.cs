@@ -46,4 +46,17 @@ public sealed class GamesControllerTests
 
         provider.Verify(x => x.GetCurrentYearGamesAsync(DateTime.UtcNow.Year, It.IsAny<CancellationToken>()), Times.Once);
     }
+
+    [Test]
+    public async Task Recent_returns_at_most_ten_released_games()
+    {
+        var repository = new Mock<IGameRepository>();
+        repository.Setup(x => x.GetRecentAsync(10, It.IsAny<DateTime>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
+        var controller = new GamesController(new Mock<IMediator>().Object, new Mock<IGameCatalogProvider>().Object, repository.Object);
+
+        var result = await controller.Recent(20, CancellationToken.None);
+
+        Assert.That(result.Result, Is.TypeOf<OkObjectResult>());
+        repository.Verify(x => x.GetRecentAsync(10, It.Is<DateTime>(date => date.Kind == DateTimeKind.Utc), It.IsAny<CancellationToken>()), Times.Once);
+    }
 }
