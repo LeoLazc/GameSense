@@ -35,13 +35,14 @@ public sealed class GamesController(IMediator mediator, IGameCatalogProvider cat
         if (limit <= 0) return BadRequest("Limit must be greater than zero.");
 
         var recentGames = await games.GetRecentAsync(Math.Min(limit, 10), DateTime.UtcNow, cancellationToken);
-        return Ok(recentGames.Select(ToCatalogDto).ToArray());
+        return Ok(recentGames.Select(summary => ToCatalogDto(summary.Game, summary.AverageScore, summary.VoteCount)).ToArray());
     }
 
     [AllowAnonymous, HttpGet("{id:int}")]
-    public async Task<ActionResult<GameResponseDto>> Get(int id, CancellationToken cancellationToken)
+    public async Task<ActionResult<GameResponseDto>> Get(int id, [FromQuery] int page = 1, CancellationToken cancellationToken = default)
     {
-        var result = await mediator.Send(new GetGameQuery(id), cancellationToken);
+        var viewerId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var parsedId) ? parsedId : (int?)null;
+        var result = await mediator.Send(new GetGameQuery(id, page, viewerId), cancellationToken);
         return result == null ? NotFound() : Ok(result);
     }
 
@@ -55,5 +56,12 @@ public sealed class GamesController(IMediator mediator, IGameCatalogProvider cat
 
     private static GameCatalogResponseDto ToCatalogDto(GameSense.Core.Models.Game game) => new(
         game.Id, game.Name, game.ReleaseYear, game.ExternalId, game.Slug, game.Description, game.ReleasedAt,
-        game.CoverImageUrl, game.BackgroundImageUrl, game.WebsiteUrl, game.FranchiseName, game.LastSyncedAt);
+        game.CoverImageUrl, game.BackgroundImageUrl, game.WebsiteUrl, game.FranchiseName, game.LastSyncedAt,
+        game.Reviews.Count == 0 ? null : (int?)Math.Round(game.Reviews.Average(r => r.Rating), MidpointRounding.AwayFromZero),
+        game.Reviews.Count);
+
+    private static GameCatalogResponseDto ToCatalogDto(GameSense.Core.Models.Game game, int? averageScore, int voteCount) => new(
+        game.Id, game.Name, game.ReleaseYear, game.ExternalId, game.Slug, game.Description, game.ReleasedAt,
+        game.CoverImageUrl, game.BackgroundImageUrl, game.WebsiteUrl, game.FranchiseName, game.LastSyncedAt,
+        averageScore, voteCount);
 }

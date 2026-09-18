@@ -1,5 +1,5 @@
 import { AuthPanel, useAuth } from './features/auth'
-import { GamePage, HomePanel, ProfilePanel, useGameDetails, useHome, useProfile, useRecentGames } from './features/home'
+import { GamePage, HomePanel, ProfilePanel, ReviewsPage, useGameDetails, useHome, useProfile, useRecentGames } from './features/home'
 import { ErrorPanel, QuestionPanel, ResultPanel, useQuiz, Welcome } from './features/quiz'
 import { quizSessionStorage } from './services/storage/quizSessionStorage'
 
@@ -7,10 +7,10 @@ function App() {
   const authController = useAuth()
   const quiz = useQuiz(authController.auth?.accessToken, authController.signOut)
   const auth = authController.auth
-  const { surface, selectedGameId, goHome, goProfile, goQuiz, goGame } = useHome(auth)
+  const { surface, selectedGameId, goHome, goProfile, goQuiz, goGame, goReviews } = useHome(auth)
   const profileController = useProfile(auth?.accessToken, auth?.userId)
   const gamesController = useRecentGames(!!auth)
-  const gameController = useGameDetails(surface === 'game' ? selectedGameId : null)
+  const gameController = useGameDetails(surface === 'game' || surface === 'reviews' ? selectedGameId : null, auth?.accessToken)
 
   const view = auth ? (surface === 'quiz' ? quiz.view : surface) : 'auth'
 
@@ -73,7 +73,8 @@ function App() {
             onOpenGame={goGame}
           />
         )}
-        {view === 'game' && auth && <GamePage game={gameController.game} pending={gameController.pending} error={gameController.error} onBack={goHome} />}
+        {view === 'game' && auth && <GamePage game={gameController.game} pending={gameController.pending} error={gameController.error} onBack={goHome} onViewReviews={goReviews} onSubmitReview={gameController.submitReview} />}
+        {view === 'reviews' && auth && <ReviewsPage game={gameController.game} pending={gameController.pending} error={gameController.error} onBack={() => selectedGameId == null ? goHome() : goGame(selectedGameId)} onPageChange={gameController.setPage} />}
         {view === 'profile' && auth && (
           <ProfilePanel
             username={auth.username}

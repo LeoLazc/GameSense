@@ -17,7 +17,7 @@ public sealed class ReviewCreationServiceTests
         var users = new Mock<IUserRepository>();
         users.Setup(x => x.GetByIdAsync(7, It.IsAny<CancellationToken>())).ReturnsAsync(user);
         var games = new Mock<IGameRepository>();
-        games.Setup(x => x.GetWithReviewsAsync(4, It.IsAny<CancellationToken>())).ReturnsAsync(new Game { Id = 4 });
+        games.Setup(x => x.GameExistsAsync(4, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         var reviews = new Mock<IReviewRepository>();
         reviews.Setup(x => x.ExistsForUserAndGameAsync(7, 4, It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
@@ -52,7 +52,7 @@ public sealed class ReviewCreationServiceTests
         var users = new Mock<IUserRepository>();
         users.Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(new User { Id = 1, ExpertiseScore = 95m });
         var games = new Mock<IGameRepository>();
-        games.Setup(x => x.GetWithReviewsAsync(2, It.IsAny<CancellationToken>())).ReturnsAsync(new Game { Id = 2 });
+        games.Setup(x => x.GameExistsAsync(2, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         var reviews = new Mock<IReviewRepository>();
         reviews.Setup(x => x.ExistsForUserAndGameAsync(1, 2, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
@@ -67,7 +67,7 @@ public sealed class ReviewCreationServiceTests
         var users = new Mock<IUserRepository>();
         users.Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(new User { Id = 1, ExpertiseScore = 95m });
         var games = new Mock<IGameRepository>();
-        games.Setup(x => x.GetWithReviewsAsync(2, It.IsAny<CancellationToken>())).ReturnsAsync((Game?)null);
+        games.Setup(x => x.GameExistsAsync(2, It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
         Assert.ThrowsAsync<KeyNotFoundException>(() => new ReviewCreationService(users.Object, games.Object, Mock.Of<IReviewRepository>(), new ReviewEligibilityPolicy())
             .CreateAsync(1, 2, "Title", "Content", 90));

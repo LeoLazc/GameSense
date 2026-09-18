@@ -1,5 +1,6 @@
 export { HomePanel } from './components/HomePanel'
 export { GamePage } from './components/GamePage'
+export { ReviewsPage } from './components/ReviewsPage'
 export { RecentGamesCarousel } from './components/RecentGamesCarousel'
 export { ProfilePanel } from './components/ProfilePanel'
 export { useHome } from './hooks/useHome'

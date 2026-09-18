@@ -9,12 +9,36 @@ using MediatR;
 
 namespace GameSense.Api.Handlers;
 
-public sealed class GetGameHandler(IGameRepository games, IMapper mapper) : IRequestHandler<GetGameQuery, GameResponseDto?>
+public sealed class GetGameHandler(IGameRepository games, IMapper mapper, IUserRepository? users = null, IReviewRepository? reviews = null) : IRequestHandler<GetGameQuery, GameResponseDto?>
 {
     public async Task<GameResponseDto?> Handle(GetGameQuery request, CancellationToken cancellationToken)
     {
-        var game = await games.GetWithReviewsAsync(request.GameId, cancellationToken);
-        return game == null ? null : mapper.Map<GameResponseDto>(game);
+        var page = Math.Max(1, request.Page);
+        var data = await games.GetReviewPageAsync(request.GameId, page, 10, cancellationToken);
+        if (data is null)
+        {
+            var game = await games.GetWithReviewsAsync(request.GameId, cancellationToken);
+            return game == null ? null : mapper.Map<GameResponseDto>(game);
+        }
+        var dto = mapper.Map<GameResponseDto>(data.Game);
+        var eligible = false;
+        var hasReviewed = false;
+        if (request.ViewerId is int viewerId && users is not null && reviews is not null)
+        {
+            var user = await users.GetByIdAsync(viewerId, cancellationToken);
+            eligible = user?.ExpertiseScore >= 60m;
+            hasReviewed = await reviews.ExistsForUserAndGameAsync(viewerId, request.GameId, cancellationToken);
+        }
+        return dto with
+        {
+            AverageScore = data.AverageScore,
+            VoteCount = data.TotalReviews,
+            CurrentPage = page,
+            PageSize = 10,
+            TotalPages = data.TotalReviews == 0 ? 0 : (int)Math.Ceiling(data.TotalReviews / 10d),
+            IsViewerEligible = eligible,
+            HasViewerReviewed = hasReviewed
+        };
     }
 }
 

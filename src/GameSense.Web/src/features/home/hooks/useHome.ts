@@ -17,6 +17,7 @@ export function useHome(auth: AuthState) {
     goProfile: () => setSurface('profile'),
     goQuiz: () => setSurface('quiz'),
     goGame: (gameId: number) => { setSelectedGameId(gameId); setSurface('game') },
+    goReviews: () => setSurface('reviews'),
     selectedGameId,
   }
 }

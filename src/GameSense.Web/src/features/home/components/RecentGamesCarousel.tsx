@@ -40,6 +40,7 @@ export function RecentGamesCarousel({ games, pending, error, onOpenGame }: {
             <dl className="game-meta">
               <div><dt>Lanzamiento</dt><dd>{formatReleaseDate(game.releasedAt)}</dd></div>
               {game.franchiseName && <div><dt>Franquicia</dt><dd>{game.franchiseName}</dd></div>}
+              <div><dt>Puntuación</dt><dd>{game.voteCount ? `${game.averageScore}/100 · ${game.voteCount} votos` : 'Sin votos todavía'}</dd></div>
             </dl>
           </div>
         </div>

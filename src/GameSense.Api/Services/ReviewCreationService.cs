@@ -32,7 +32,7 @@ public sealed class ReviewCreationService(
     {
         var user = await users.GetByIdAsync(userId, cancellationToken);
         eligibilityPolicy.EnsureEligible(user);
-        if (await games.GetWithReviewsAsync(gameId, cancellationToken) == null)
+        if (!await games.GameExistsAsync(gameId, cancellationToken))
             throw new KeyNotFoundException("Game not found.");
         if (await reviews.ExistsForUserAndGameAsync(userId, gameId, cancellationToken))
             throw new ReviewConflictException("You have already reviewed this game.");
@@ -44,7 +44,6 @@ public sealed class ReviewCreationService(
             Title = title.Trim(),
             Content = content.Trim(),
             Rating = rating,
-            User = user!
         };
         try
         {

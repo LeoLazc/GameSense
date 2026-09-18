@@ -8,8 +8,8 @@ public sealed class CreateReviewRequestValidator : AbstractValidator<CreateRevie
     public CreateReviewRequestValidator()
     {
         RuleFor(x => x.Title).NotEmpty().MaximumLength(200);
-        RuleFor(x => x.Content).NotEmpty().MaximumLength(5000);
-        RuleFor(x => x.Rating).InclusiveBetween(1, 100);
+        RuleFor(x => x.Content).NotEmpty().MaximumLength(500);
+        RuleFor(x => x.Rating).InclusiveBetween(0, 100);
     }
 }
 
