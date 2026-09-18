@@ -4,7 +4,7 @@ export class ApiError extends Error {
   constructor(public status: number, message: string) { super(message) }
 }
 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000').replace(/\/$/, '')
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5234').replace(/\/$/, '')
 const client = axios.create({ baseURL: API_BASE_URL })
 
 export async function request<T>(path: string, init: RequestInit = {}, token?: string): Promise<T> {

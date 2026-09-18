@@ -1,4 +1,4 @@
-export type AppSurface = 'home' | 'profile' | 'game' | 'quiz'
+export type AppSurface = 'home' | 'profile' | 'game' | 'reviews' | 'quiz'
 
 export type RecentGame = {
   id: number
@@ -10,6 +10,8 @@ export type RecentGame = {
   backgroundImageUrl: string | null
   websiteUrl: string | null
   franchiseName: string | null
+  averageScore: number | null
+  voteCount: number
 }
 
 export type GameReview = {
@@ -24,6 +26,11 @@ export type GameReview = {
 
 export type GameDetails = RecentGame & {
   reviews: GameReview[]
+  currentPage: number
+  pageSize: number
+  totalPages: number
+  isViewerEligible: boolean
+  hasViewerReviewed: boolean
 }
 
 export type Profile = {

@@ -12,7 +12,14 @@ public sealed record GameResponseDto(
     DateTime? ReleasedAt = null,
     string? CoverImageUrl = null,
     string? BackgroundImageUrl = null,
-    string? WebsiteUrl = null);
+    string? WebsiteUrl = null,
+    int? AverageScore = null,
+    int VoteCount = 0,
+    int CurrentPage = 1,
+    int PageSize = 10,
+    int TotalPages = 0,
+    bool IsViewerEligible = false,
+    bool HasViewerReviewed = false);
 public sealed record GotyNomineeResponseDto(int GameId, string Name, int Order);
 public sealed record GotyPredictionResponseDto(int Year, int GotyGameId, IReadOnlyList<GotyNomineeResponseDto> Nominees);
 public sealed record SaveGotyPredictionRequest(IReadOnlyList<int> GameIds, int GotyGameId);

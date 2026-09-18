@@ -8,12 +8,20 @@ namespace GameSense.Api.Tests.Validators;
 public sealed class ReviewValidatorTests
 {
     [Test]
-    public void Create_review_rejects_ratings_outside_1_to_100()
+    public void Create_review_accepts_ratings_from_0_to_100()
     {
         var validator = new CreateReviewRequestValidator();
 
-        Assert.That(validator.Validate(new CreateReviewRequest("Title", "Content", 0)).IsValid, Is.False);
+        Assert.That(validator.Validate(new CreateReviewRequest("Title", "Content", 0)).IsValid, Is.True);
         Assert.That(validator.Validate(new CreateReviewRequest("Title", "Content", 101)).IsValid, Is.False);
+    }
+
+    [Test]
+    public void Create_review_rejects_content_longer_than_500_characters()
+    {
+        var content = new string('x', 501);
+
+        Assert.That(new CreateReviewRequestValidator().Validate(new CreateReviewRequest("Title", content, 50)).IsValid, Is.False);
     }
 
     [Test]
