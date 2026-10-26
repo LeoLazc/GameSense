@@ -2,7 +2,9 @@ namespace GameSense.Core.Services;
 
 public interface IGameCatalogProvider
 {
+    Task<CatalogGame?> GetGameAsync(string externalId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<CatalogGame>> SearchGamesAsync(string query, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<CatalogGame>> GetRecentGamesAsync(int limit, DateTime releasedBefore, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<CatalogGame>> GetCurrentYearGamesAsync(int year, CancellationToken cancellationToken = default);
 }
 

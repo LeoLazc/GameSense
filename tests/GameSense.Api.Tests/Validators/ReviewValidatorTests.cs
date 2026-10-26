@@ -27,6 +27,6 @@ public sealed class ReviewValidatorTests
     [Test]
     public void Save_goty_rejects_fewer_than_six_nominees()
     {
-        Assert.That(new SaveGotyPredictionRequestValidator().Validate(new SaveGotyPredictionRequest([1, 2, 3], 1)).IsValid, Is.False);
+        Assert.That(new SaveGotyPredictionRequestValidator().Validate(new SaveGotyPredictionRequest(["1", "2", "3"], "1")).IsValid, Is.False);
     }
 }

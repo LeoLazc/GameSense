@@ -7,7 +7,7 @@ public sealed class GetGameQueryValidator : AbstractValidator<GetGameQuery>
 {
     public GetGameQueryValidator()
     {
-        RuleFor(x => x.GameId).GreaterThan(0);
+        RuleFor(x => x.GameId).NotEmpty().MaximumLength(50);
     }
 }
 
@@ -16,7 +16,7 @@ public sealed class CreateReviewCommandValidator : AbstractValidator<CreateRevie
     public CreateReviewCommandValidator()
     {
         RuleFor(x => x.UserId).GreaterThan(0);
-        RuleFor(x => x.GameId).GreaterThan(0);
+        RuleFor(x => x.GameId).NotEmpty().MaximumLength(50);
         RuleFor(x => x.Request)
             .NotNull()
             .SetValidator(new CreateReviewRequestValidator());

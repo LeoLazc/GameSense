@@ -17,16 +17,9 @@ public sealed class AutoMapperProfile : Profile
         CreateMap<QuizSession, QuizResultDto>()
             .ForCtorParam(nameof(QuizResultDto.ExpertiseScore), opt => opt.MapFrom(s => s.User == null ? null : s.User.ExpertiseScore))
             .ForCtorParam(nameof(QuizResultDto.Answers), opt => opt.MapFrom(s => s.QuizAnswers));
-        CreateMap<Review, ReviewResponseDto>().ForCtorParam(nameof(ReviewResponseDto.Username), opt => opt.MapFrom(s => s.User.Username));
-        CreateMap<Game, GameResponseDto>()
-            .ForCtorParam(nameof(GameResponseDto.FranchiseName), opt => opt.MapFrom(s => s.Franchise == null ? s.FranchiseName : s.Franchise.Name))
-            .ForCtorParam(nameof(GameResponseDto.Description), opt => opt.MapFrom(s => s.Description))
-            .ForCtorParam(nameof(GameResponseDto.ReleasedAt), opt => opt.MapFrom(s => s.ReleasedAt))
-            .ForCtorParam(nameof(GameResponseDto.CoverImageUrl), opt => opt.MapFrom(s => s.CoverImageUrl))
-            .ForCtorParam(nameof(GameResponseDto.BackgroundImageUrl), opt => opt.MapFrom(s => s.BackgroundImageUrl))
-            .ForCtorParam(nameof(GameResponseDto.WebsiteUrl), opt => opt.MapFrom(s => s.WebsiteUrl))
-            .ForCtorParam(nameof(GameResponseDto.Reviews), opt => opt.MapFrom(s => s.Reviews));
-        CreateMap<GotyNominee, GotyNomineeResponseDto>().ForCtorParam(nameof(GotyNomineeResponseDto.Name), opt => opt.MapFrom(s => s.Game.Name));
-        CreateMap<GotyPrediction, GotyPredictionResponseDto>().ForCtorParam(nameof(GotyPredictionResponseDto.Nominees), opt => opt.MapFrom(s => s.Nominees));
+        CreateMap<Review, ReviewResponseDto>()
+            .ForCtorParam(nameof(ReviewResponseDto.Username), opt => opt.MapFrom(s => s.User.Username))
+            .ForCtorParam(nameof(ReviewResponseDto.GameTitle), opt => opt.MapFrom(s => s.GameTitle))
+            .ForCtorParam(nameof(ReviewResponseDto.GameImageUrl), opt => opt.MapFrom(s => s.GameImageUrl));
     }
 }

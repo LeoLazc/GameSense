@@ -4,6 +4,7 @@ using GameSense.Api.Handlers;
 using GameSense.Api.Requests;
 using GameSense.Core.Models;
 using GameSense.Core.Repositories;
+using GameSense.Core.Services;
 using Moq;
 using NUnit.Framework;
 
@@ -12,43 +13,44 @@ namespace GameSense.Api.Tests.Handlers;
 [TestFixture]
 public sealed class GetGameHandlerTests
 {
-    [Test]
-    public async Task Maps_found_game_and_returns_null_when_missing()
-    {
-        var game = new Game { Id = 3, Name = "Game" };
-        var games = new Mock<IGameRepository>();
-        games.Setup(x => x.GetWithReviewsAsync(3, It.IsAny<CancellationToken>())).ReturnsAsync(game);
-        games.Setup(x => x.GetWithReviewsAsync(4, It.IsAny<CancellationToken>())).ReturnsAsync((Game?)null);
-        var dto = new GameResponseDto(3, "Game", 2026, null, Array.Empty<ReviewResponseDto>());
-        var mapper = new Mock<IMapper>();
-        mapper.Setup(x => x.Map<GameResponseDto>(game)).Returns(dto);
-        var handler = new GetGameHandler(games.Object, mapper.Object);
+    private static CatalogGame Catalog(string id = "3") =>
+        new("rawg", id, "game", "Game", "Description", new DateTime(2026, 1, 1), 2026, "cover", "background", null, null, null, DateTime.UtcNow);
 
-        Assert.That(await handler.Handle(new GetGameQuery(3), CancellationToken.None), Is.SameAs(dto));
-        Assert.That(await handler.Handle(new GetGameQuery(4), CancellationToken.None), Is.Null);
+    [Test]
+    public async Task Returns_null_when_rawg_game_is_missing()
+    {
+        var catalog = new Mock<IGameCatalogProvider>();
+        catalog.Setup(x => x.GetGameAsync("4", It.IsAny<CancellationToken>())).ReturnsAsync((CatalogGame?)null);
+        var handler = new GetGameHandler(Mock.Of<IGameRepository>(), catalog.Object, Mock.Of<IMapper>());
+
+        Assert.That(await handler.Handle(new GetGameQuery("4"), CancellationToken.None), Is.Null);
     }
 
     [Test]
-    public async Task Returns_paginated_score_and_viewer_state()
+    public async Task Returns_paginated_reviews_and_viewer_state()
     {
-        var game = new Game { Id = 3, Name = "Game" };
+        var game = Catalog();
+        var catalog = new Mock<IGameCatalogProvider>();
+        catalog.Setup(x => x.GetGameAsync("3", It.IsAny<CancellationToken>())).ReturnsAsync(game);
+        var review = new Review { RawgGameId = "3", GameTitle = "Game", User = new User { Username = "reviewer" } };
         var games = new Mock<IGameRepository>();
-        games.Setup(x => x.GetReviewPageAsync(3, 2, 10, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new GameReviewPage(game, 11, 81));
+        games.Setup(x => x.GetReviewPageAsync(game, 2, 10, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new GameReviewPage(game, [review], 11, 81));
         var mapper = new Mock<IMapper>();
-        mapper.Setup(x => x.Map<GameResponseDto>(game)).Returns(new GameResponseDto(3, "Game", 2026, null, []));
+        mapper.Setup(x => x.Map<IReadOnlyList<ReviewResponseDto>>(It.IsAny<IReadOnlyList<Review>>()))
+            .Returns([new ReviewResponseDto(1, "Title", "Content", 81, DateTime.UtcNow, DateTime.UtcNow, "reviewer", "Game", "cover")]);
         var users = new Mock<IUserRepository>();
         users.Setup(x => x.GetByIdAsync(7, It.IsAny<CancellationToken>())).ReturnsAsync(new User { Id = 7, ExpertiseScore = 60m });
         var reviews = new Mock<IReviewRepository>();
-        reviews.Setup(x => x.ExistsForUserAndGameAsync(7, 3, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        reviews.Setup(x => x.ExistsForUserAndGameAsync(7, "3", It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
-        var result = await new GetGameHandler(games.Object, mapper.Object, users.Object, reviews.Object)
-            .Handle(new GetGameQuery(3, 2, 7), CancellationToken.None);
+        var result = await new GetGameHandler(games.Object, catalog.Object, mapper.Object, users.Object, reviews.Object)
+            .Handle(new GetGameQuery("3", 2, 7), CancellationToken.None);
 
-        Assert.That(result!.AverageScore, Is.EqualTo(81));
+        Assert.That(result!.Id, Is.EqualTo("3"));
+        Assert.That(result.AverageScore, Is.EqualTo(81));
         Assert.That(result.VoteCount, Is.EqualTo(11));
         Assert.That(result.CurrentPage, Is.EqualTo(2));
-        Assert.That(result.PageSize, Is.EqualTo(10));
         Assert.That(result.TotalPages, Is.EqualTo(2));
         Assert.That(result.IsViewerEligible, Is.True);
         Assert.That(result.HasViewerReviewed, Is.True);

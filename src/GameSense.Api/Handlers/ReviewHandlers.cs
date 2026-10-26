@@ -1,26 +1,27 @@
 using AutoMapper;
 using GameSense.Api.DTOs;
 using GameSense.Api.Requests;
-using GameSense.Core.Exceptions;
-using GameSense.Core.Models;
 using GameSense.Core.Repositories;
 using GameSense.Core.Services;
 using MediatR;
 
 namespace GameSense.Api.Handlers;
 
-public sealed class GetGameHandler(IGameRepository games, IMapper mapper, IUserRepository? users = null, IReviewRepository? reviews = null) : IRequestHandler<GetGameQuery, GameResponseDto?>
+public sealed class GetGameHandler(
+    IGameRepository games,
+    IGameCatalogProvider catalog,
+    IMapper mapper,
+    IUserRepository? users = null,
+    IReviewRepository? reviews = null) : IRequestHandler<GetGameQuery, GameResponseDto?>
 {
     public async Task<GameResponseDto?> Handle(GetGameQuery request, CancellationToken cancellationToken)
     {
+        var game = await catalog.GetGameAsync(request.GameId, cancellationToken);
+        if (game is null)
+            return null;
+
         var page = Math.Max(1, request.Page);
-        var data = await games.GetReviewPageAsync(request.GameId, page, 10, cancellationToken);
-        if (data is null)
-        {
-            var game = await games.GetWithReviewsAsync(request.GameId, cancellationToken);
-            return game == null ? null : mapper.Map<GameResponseDto>(game);
-        }
-        var dto = mapper.Map<GameResponseDto>(data.Game);
+        var data = await games.GetReviewPageAsync(game, page, 10, cancellationToken);
         var eligible = false;
         var hasReviewed = false;
         if (request.ViewerId is int viewerId && users is not null && reviews is not null)
@@ -29,16 +30,25 @@ public sealed class GetGameHandler(IGameRepository games, IMapper mapper, IUserR
             eligible = user?.ExpertiseScore >= 60m;
             hasReviewed = await reviews.ExistsForUserAndGameAsync(viewerId, request.GameId, cancellationToken);
         }
-        return dto with
-        {
-            AverageScore = data.AverageScore,
-            VoteCount = data.TotalReviews,
-            CurrentPage = page,
-            PageSize = 10,
-            TotalPages = data.TotalReviews == 0 ? 0 : (int)Math.Ceiling(data.TotalReviews / 10d),
-            IsViewerEligible = eligible,
-            HasViewerReviewed = hasReviewed
-        };
+
+        return new GameResponseDto(
+            game.ExternalId,
+            game.Name,
+            game.ReleaseYear ?? 0,
+            game.FranchiseName,
+            mapper.Map<IReadOnlyList<ReviewResponseDto>>(data.Reviews),
+            game.Summary,
+            game.ReleasedAt,
+            game.CoverImageUrl,
+            game.BackgroundImageUrl,
+            game.WebsiteUrl,
+            data.AverageScore,
+            data.TotalReviews,
+            page,
+            10,
+            data.TotalReviews == 0 ? 0 : (int)Math.Ceiling(data.TotalReviews / 10d),
+            eligible,
+            hasReviewed);
     }
 }
 

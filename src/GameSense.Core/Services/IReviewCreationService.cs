@@ -6,7 +6,7 @@ public interface IReviewCreationService
 {
     Task<Review> CreateAsync(
         int userId,
-        int gameId,
+        string rawgGameId,
         string title,
         string content,
         int rating,

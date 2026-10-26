@@ -12,8 +12,6 @@ namespace GameSense.Infrastructure.Data
         }
 
         public DbSet<User> Users { get; set; } = null!;
-        public DbSet<Franchise> Franchises { get; set; } = null!;
-        public DbSet<Game> Games { get; set; } = null!;
         public DbSet<Question> Questions { get; set; } = null!;
         public DbSet<QuestionCategory> QuestionCategories { get; set; } = null!;
         public DbSet<QuizSession> QuizSessions { get; set; } = null!;
@@ -28,13 +26,6 @@ namespace GameSense.Infrastructure.Data
             base.OnModelCreating(modelBuilder);
             modelBuilder.HasAnnotation("GameSense:QuizSeedVersion", 1);
 
-            modelBuilder.Entity<Franchise>(b =>
-            {
-                b.HasKey(f => f.Id);
-                b.Property(f => f.Name).IsRequired().HasMaxLength(200);
-                b.HasMany(f => f.Games).WithOne(g => g.Franchise).HasForeignKey(g => g.FranchiseId).IsRequired(false);
-            });
-
             modelBuilder.Entity<User>(b =>
             {
                 b.HasKey(u => u.Id);
@@ -44,23 +35,6 @@ namespace GameSense.Infrastructure.Data
                 b.Property(u => u.ExpertiseScore).HasPrecision(5, 2);
                 b.HasIndex(u => u.Username).IsUnique();
                 b.HasIndex(u => u.Email).IsUnique();
-            });
-
-            modelBuilder.Entity<Game>(b =>
-            {
-                b.HasKey(g => g.Id);
-                b.Property(g => g.Name).IsRequired().HasMaxLength(200);
-                b.Property(g => g.ExternalId).HasMaxLength(50);
-                b.Property(g => g.Slug).HasMaxLength(300);
-                b.Property(g => g.Description).HasMaxLength(10000);
-                b.Property(g => g.CoverImageUrl).HasMaxLength(1000);
-                b.Property(g => g.BackgroundImageUrl).HasMaxLength(1000);
-                b.Property(g => g.WebsiteUrl).HasMaxLength(1000);
-                b.Property(g => g.FranchiseExternalId).HasMaxLength(50);
-                b.Property(g => g.FranchiseName).HasMaxLength(200);
-                b.Property(g => g.CatalogProvider).HasMaxLength(50);
-                 b.HasIndex(g => new { g.CatalogProvider, g.ExternalId }).IsUnique()
-                     .HasFilter("[CatalogProvider] IS NOT NULL AND [ExternalId] IS NOT NULL");
             });
 
             modelBuilder.Entity<Question>(b =>
@@ -111,12 +85,14 @@ namespace GameSense.Infrastructure.Data
             modelBuilder.Entity<Review>(b =>
             {
                 b.HasKey(r => r.Id);
+                b.Property(r => r.RawgGameId).IsRequired().HasMaxLength(50);
+                b.Property(r => r.GameTitle).IsRequired().HasMaxLength(200);
+                b.Property(r => r.GameImageUrl).HasMaxLength(1000);
                 b.Property(r => r.Title).IsRequired().HasMaxLength(200);
                 b.Property(r => r.Content).IsRequired().HasMaxLength(5000);
                 b.Property(r => r.Rating).IsRequired();
                  b.HasOne(r => r.User).WithMany(u => u.Reviews).HasForeignKey(r => r.UserId).OnDelete(DeleteBehavior.Restrict);
-                 b.HasOne(r => r.Game).WithMany(g => g.Reviews).HasForeignKey(r => r.GameId);
-                 b.HasIndex(r => new { r.UserId, r.GameId }).IsUnique();
+                b.HasIndex(r => new { r.UserId, r.RawgGameId }).IsUnique();
             });
 
             modelBuilder.Entity<GotyPrediction>(b =>
@@ -124,16 +100,16 @@ namespace GameSense.Infrastructure.Data
                 b.HasKey(p => p.Id);
                 b.HasIndex(p => new { p.UserId, p.Year }).IsUnique();
                 b.HasOne(p => p.User).WithMany(u => u.GotyPredictions).HasForeignKey(p => p.UserId).OnDelete(DeleteBehavior.Restrict);
-                b.HasOne(p => p.GotyGame).WithMany(g => g.GotyPredictions).HasForeignKey(p => p.GotyGameId).OnDelete(DeleteBehavior.Restrict);
+                b.Property(p => p.GotyRawgGameId).IsRequired().HasMaxLength(50);
             });
 
             modelBuilder.Entity<GotyNominee>(b =>
             {
                 b.HasKey(n => n.Id);
-                b.HasIndex(n => new { n.PredictionId, n.GameId }).IsUnique();
+                b.Property(n => n.RawgGameId).IsRequired().HasMaxLength(50);
+                b.HasIndex(n => new { n.PredictionId, n.RawgGameId }).IsUnique();
                 b.HasIndex(n => new { n.PredictionId, n.Order }).IsUnique();
                 b.HasOne(n => n.Prediction).WithMany(p => p.Nominees).HasForeignKey(n => n.PredictionId);
-                b.HasOne(n => n.Game).WithMany(g => g.GotyNominations).HasForeignKey(n => n.GameId).OnDelete(DeleteBehavior.Restrict);
             });
         }
     }
