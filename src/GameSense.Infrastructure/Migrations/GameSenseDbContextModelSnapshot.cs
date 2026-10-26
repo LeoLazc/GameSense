@@ -23,96 +23,6 @@ namespace GameSense.Infrastructure.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("GameSense.Core.Models.Franchise", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Franchises");
-                });
-
-            modelBuilder.Entity("GameSense.Core.Models.Game", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("BackgroundImageUrl")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<string>("CatalogProvider")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("CoverImageUrl")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(10000)
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ExternalId")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("FranchiseExternalId")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int?>("FranchiseId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("FranchiseName")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<DateTime?>("LastSyncedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int>("ReleaseYear")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("ReleasedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Slug")
-                        .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)");
-
-                    b.Property<string>("WebsiteUrl")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FranchiseId");
-
-                    b.HasIndex("CatalogProvider", "ExternalId")
-                        .IsUnique()
-                        .HasFilter("[CatalogProvider] IS NOT NULL AND [ExternalId] IS NOT NULL");
-
-                    b.ToTable("Games");
-                });
-
             modelBuilder.Entity("GameSense.Core.Models.GotyNominee", b =>
                 {
                     b.Property<int>("Id")
@@ -121,23 +31,23 @@ namespace GameSense.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("GameId")
-                        .HasColumnType("int");
-
                     b.Property<int>("Order")
                         .HasColumnType("int");
 
                     b.Property<int>("PredictionId")
                         .HasColumnType("int");
 
+                    b.Property<string>("RawgGameId")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("GameId");
-
-                    b.HasIndex("PredictionId", "GameId")
+                    b.HasIndex("PredictionId", "Order")
                         .IsUnique();
 
-                    b.HasIndex("PredictionId", "Order")
+                    b.HasIndex("PredictionId", "RawgGameId")
                         .IsUnique();
 
                     b.ToTable("GotyNominees");
@@ -154,8 +64,10 @@ namespace GameSense.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("GotyGameId")
-                        .HasColumnType("int");
+                    b.Property<string>("GotyRawgGameId")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
@@ -164,8 +76,6 @@ namespace GameSense.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("GotyGameId");
 
                     b.HasIndex("UserId", "Year")
                         .IsUnique();
@@ -349,11 +259,22 @@ namespace GameSense.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("GameId")
-                        .HasColumnType("int");
+                    b.Property<string>("GameImageUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("GameTitle")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<int>("Rating")
                         .HasColumnType("int");
+
+                    b.Property<string>("RawgGameId")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -368,9 +289,7 @@ namespace GameSense.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("GameId");
-
-                    b.HasIndex("UserId", "GameId")
+                    b.HasIndex("UserId", "RawgGameId")
                         .IsUnique();
 
                     b.ToTable("Reviews");
@@ -416,49 +335,24 @@ namespace GameSense.Infrastructure.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("GameSense.Core.Models.Game", b =>
-                {
-                    b.HasOne("GameSense.Core.Models.Franchise", "Franchise")
-                        .WithMany("Games")
-                        .HasForeignKey("FranchiseId");
-
-                    b.Navigation("Franchise");
-                });
-
             modelBuilder.Entity("GameSense.Core.Models.GotyNominee", b =>
                 {
-                    b.HasOne("GameSense.Core.Models.Game", "Game")
-                        .WithMany("GotyNominations")
-                        .HasForeignKey("GameId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("GameSense.Core.Models.GotyPrediction", "Prediction")
                         .WithMany("Nominees")
                         .HasForeignKey("PredictionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Game");
-
                     b.Navigation("Prediction");
                 });
 
             modelBuilder.Entity("GameSense.Core.Models.GotyPrediction", b =>
                 {
-                    b.HasOne("GameSense.Core.Models.Game", "GotyGame")
-                        .WithMany("GotyPredictions")
-                        .HasForeignKey("GotyGameId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("GameSense.Core.Models.User", "User")
                         .WithMany("GotyPredictions")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.Navigation("GotyGame");
 
                     b.Navigation("User");
                 });
@@ -525,35 +419,13 @@ namespace GameSense.Infrastructure.Migrations
 
             modelBuilder.Entity("GameSense.Core.Models.Review", b =>
                 {
-                    b.HasOne("GameSense.Core.Models.Game", "Game")
-                        .WithMany("Reviews")
-                        .HasForeignKey("GameId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("GameSense.Core.Models.User", "User")
                         .WithMany("Reviews")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Game");
-
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("GameSense.Core.Models.Franchise", b =>
-                {
-                    b.Navigation("Games");
-                });
-
-            modelBuilder.Entity("GameSense.Core.Models.Game", b =>
-                {
-                    b.Navigation("GotyNominations");
-
-                    b.Navigation("GotyPredictions");
-
-                    b.Navigation("Reviews");
                 });
 
             modelBuilder.Entity("GameSense.Core.Models.GotyPrediction", b =>

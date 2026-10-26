@@ -44,13 +44,13 @@ namespace GameSense.Api.Extensions
             services.AddDbContext<GameSenseDbContext>(opts => opts.UseSqlServer(defaultConn));
 
             services.Configure<GameCatalogOptions>(configuration.GetSection("GameCatalog"));
+            services.AddMemoryCache();
             services.AddHttpClient("GameCatalogApi", (provider, client) =>
             {
                 var options = provider.GetRequiredService<Microsoft.Extensions.Options.IOptions<GameCatalogOptions>>().Value;
                 client.BaseAddress = new Uri(options.ApiBaseUrl);
             });
             services.AddSingleton<IGameCatalogProvider, HttpGameCatalogProvider>();
-            services.AddHostedService<GameCatalogStartupSync>();
 
             var jwtKey = configuration["Jwt:Key"];
             var jwtIssuer = configuration["Jwt:Issuer"];

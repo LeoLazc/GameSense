@@ -6,7 +6,7 @@ public interface IGotyPredictionService
 {
     Task<GotyPrediction> CreateAsync(
         int userId,
-        IReadOnlyList<int> gameIds,
-        int gotyGameId,
+        IReadOnlyList<string> gameIds,
+        string gotyGameId,
         CancellationToken cancellationToken = default);
 }

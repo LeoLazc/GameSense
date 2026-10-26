@@ -18,13 +18,13 @@ public sealed class ReviewEligibilityPolicy : IReviewEligibilityPolicy
 
 public sealed class ReviewCreationService(
     IUserRepository users,
-    IGameRepository games,
+    IGameCatalogProvider catalog,
     IReviewRepository reviews,
     IReviewEligibilityPolicy eligibilityPolicy) : IReviewCreationService
 {
     public async Task<Review> CreateAsync(
         int userId,
-        int gameId,
+        string rawgGameId,
         string title,
         string content,
         int rating,
@@ -32,15 +32,18 @@ public sealed class ReviewCreationService(
     {
         var user = await users.GetByIdAsync(userId, cancellationToken);
         eligibilityPolicy.EnsureEligible(user);
-        if (!await games.GameExistsAsync(gameId, cancellationToken))
+        var game = await catalog.GetGameAsync(rawgGameId, cancellationToken);
+        if (game is null)
             throw new KeyNotFoundException("Game not found.");
-        if (await reviews.ExistsForUserAndGameAsync(userId, gameId, cancellationToken))
+        if (await reviews.ExistsForUserAndGameAsync(userId, rawgGameId, cancellationToken))
             throw new ReviewConflictException("You have already reviewed this game.");
 
         var review = new Review
         {
             UserId = userId,
-            GameId = gameId,
+            RawgGameId = rawgGameId,
+            GameTitle = game.Name,
+            GameImageUrl = game.CoverImageUrl ?? game.BackgroundImageUrl,
             Title = title.Trim(),
             Content = content.Trim(),
             Rating = rating,

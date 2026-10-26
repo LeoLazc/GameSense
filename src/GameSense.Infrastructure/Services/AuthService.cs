@@ -11,6 +11,7 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace GameSense.Infrastructure.Services
 {
+    //ToDo: double check if this is the correct implementation of IAuthService, and if not, implement it correctly.
     public sealed class AuthService : IAuthService
     {
         private readonly GameSenseDbContext _db;

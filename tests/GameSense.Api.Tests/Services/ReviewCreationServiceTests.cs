@@ -1,7 +1,8 @@
 using GameSense.Api.Services;
 using GameSense.Core.Exceptions;
-using GameSense.Core.Models;
 using GameSense.Core.Repositories;
+using GameSense.Core.Services;
+using GameSense.Core.Models;
 using Moq;
 using NUnit.Framework;
 
@@ -10,23 +11,30 @@ namespace GameSense.Api.Tests.Services;
 [TestFixture]
 public sealed class ReviewCreationServiceTests
 {
+    private static CatalogGame Catalog(string id = "4", string name = "Game", string? image = "image") =>
+        new("rawg", id, "game", name, "summary", DateTime.UtcNow, DateTime.UtcNow.Year, image, "background", null, null, null, DateTime.UtcNow);
+
     [Test]
-    public async Task CreateAsync_trims_fields_and_persists_authenticated_user()
+    public async Task CreateAsync_trims_fields_and_persists_game_metadata()
     {
-        var user = new User { Id = 7, Username = "expert", ExpertiseScore = 60m };
         var users = new Mock<IUserRepository>();
-        users.Setup(x => x.GetByIdAsync(7, It.IsAny<CancellationToken>())).ReturnsAsync(user);
-        var games = new Mock<IGameRepository>();
-        games.Setup(x => x.GameExistsAsync(4, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        users.Setup(x => x.GetByIdAsync(7, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new User { Id = 7, Username = "expert", ExpertiseScore = 60m });
+        var catalog = new Mock<IGameCatalogProvider>();
+        catalog.Setup(x => x.GetGameAsync("4", It.IsAny<CancellationToken>())).ReturnsAsync(Catalog());
         var reviews = new Mock<IReviewRepository>();
-        reviews.Setup(x => x.ExistsForUserAndGameAsync(7, 4, It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
-        var result = await new ReviewCreationService(users.Object, games.Object, reviews.Object, new ReviewEligibilityPolicy())
-            .CreateAsync(7, 4, " Title ", " Content ", 90);
+        var result = await new ReviewCreationService(users.Object, catalog.Object, reviews.Object, new ReviewEligibilityPolicy())
+            .CreateAsync(7, "4", " Title ", " Content ", 90);
 
-        Assert.That(result.UserId, Is.EqualTo(7));
-        Assert.That(result.Title, Is.EqualTo("Title"));
-        Assert.That(result.Content, Is.EqualTo("Content"));
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.RawgGameId, Is.EqualTo("4"));
+            Assert.That(result.GameTitle, Is.EqualTo("Game"));
+            Assert.That(result.GameImageUrl, Is.EqualTo("image"));
+            Assert.That(result.Title, Is.EqualTo("Title"));
+            Assert.That(result.Content, Is.EqualTo("Content"));
+        });
         reviews.Verify(x => x.AddAsync(result, It.IsAny<CancellationToken>()), Times.Once);
         reviews.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -40,10 +48,10 @@ public sealed class ReviewCreationServiceTests
 
         Assert.ThrowsAsync<ExpertiseEligibilityException>(() => new ReviewCreationService(
                 users.Object,
-                Mock.Of<IGameRepository>(),
+                Mock.Of<IGameCatalogProvider>(),
                 Mock.Of<IReviewRepository>(),
                 new ReviewEligibilityPolicy())
-            .CreateAsync(1, 2, "Title", "Content", 90));
+            .CreateAsync(1, "2", "Title", "Content", 90));
     }
 
     [Test]
@@ -51,13 +59,13 @@ public sealed class ReviewCreationServiceTests
     {
         var users = new Mock<IUserRepository>();
         users.Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(new User { Id = 1, ExpertiseScore = 95m });
-        var games = new Mock<IGameRepository>();
-        games.Setup(x => x.GameExistsAsync(2, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        var catalog = new Mock<IGameCatalogProvider>();
+        catalog.Setup(x => x.GetGameAsync("2", It.IsAny<CancellationToken>())).ReturnsAsync(Catalog("2"));
         var reviews = new Mock<IReviewRepository>();
-        reviews.Setup(x => x.ExistsForUserAndGameAsync(1, 2, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        reviews.Setup(x => x.ExistsForUserAndGameAsync(1, "2", It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
-        Assert.ThrowsAsync<ReviewConflictException>(() => new ReviewCreationService(users.Object, games.Object, reviews.Object, new ReviewEligibilityPolicy())
-            .CreateAsync(1, 2, "Title", "Content", 90));
+        Assert.ThrowsAsync<ReviewConflictException>(() => new ReviewCreationService(users.Object, catalog.Object, reviews.Object, new ReviewEligibilityPolicy())
+            .CreateAsync(1, "2", "Title", "Content", 90));
         reviews.Verify(x => x.AddAsync(It.IsAny<Review>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -66,10 +74,11 @@ public sealed class ReviewCreationServiceTests
     {
         var users = new Mock<IUserRepository>();
         users.Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(new User { Id = 1, ExpertiseScore = 95m });
-        var games = new Mock<IGameRepository>();
-        games.Setup(x => x.GameExistsAsync(2, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        var catalog = new Mock<IGameCatalogProvider>();
+        catalog.Setup(x => x.GetGameAsync("2", It.IsAny<CancellationToken>())).ReturnsAsync((CatalogGame?)null);
 
-        Assert.ThrowsAsync<KeyNotFoundException>(() => new ReviewCreationService(users.Object, games.Object, Mock.Of<IReviewRepository>(), new ReviewEligibilityPolicy())
-            .CreateAsync(1, 2, "Title", "Content", 90));
+        Assert.ThrowsAsync<KeyNotFoundException>(() => new ReviewCreationService(
+                users.Object, catalog.Object, Mock.Of<IReviewRepository>(), new ReviewEligibilityPolicy())
+            .CreateAsync(1, "2", "Title", "Content", 90));
     }
 }

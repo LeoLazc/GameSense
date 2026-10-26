@@ -24,8 +24,8 @@ public sealed class SaveGotyPredictionRequestValidator : AbstractValidator<SaveG
             .WithMessage("Exactly six nominee games are required.")
             .Must(x => x.Distinct().Count() == 6)
             .WithMessage("Nominee game IDs must be distinct.")
-            .Must(x => x.All(id => id > 0))
-            .WithMessage("Nominee game IDs must be positive.");
-        RuleFor(x => x.GotyGameId).GreaterThan(0);
+            .Must(x => x.All(id => !string.IsNullOrWhiteSpace(id)))
+            .WithMessage("Nominee game IDs are required.");
+        RuleFor(x => x.GotyGameId).NotEmpty().MaximumLength(50);
     }
 }

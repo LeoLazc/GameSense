@@ -4,7 +4,7 @@ namespace GameSense.Core.Repositories;
 
 public interface IReviewRepository
 {
-    Task<bool> ExistsForUserAndGameAsync(int userId, int gameId, CancellationToken cancellationToken = default);
+    Task<bool> ExistsForUserAndGameAsync(int userId, string rawgGameId, CancellationToken cancellationToken = default);
     Task AddAsync(Review review, CancellationToken cancellationToken = default);
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }

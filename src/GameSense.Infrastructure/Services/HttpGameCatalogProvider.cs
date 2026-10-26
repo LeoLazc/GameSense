@@ -5,18 +5,49 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using GameSense.Core.Services;
 using GameSense.Infrastructure.Options;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 
 namespace GameSense.Infrastructure.Services;
 
 public sealed class HttpGameCatalogProvider(
     IHttpClientFactory httpClientFactory,
-    IOptions<GameCatalogOptions> options) : IGameCatalogProvider
+    IOptions<GameCatalogOptions> options,
+    IMemoryCache? cache = null) : IGameCatalogProvider
 {
+    //ToDo: find a way to improve call performance, maybe by using a single HttpClient instance and caching the results for a certain period of time.
     private const string Provider = "rawg";
-    // Protect synchronization from malformed provider responses without imposing a normal catalog limit.
     private const int MaximumPages = 100;
     private readonly GameCatalogOptions settings = options.Value;
+
+    public async Task<CatalogGame?> GetGameAsync(string externalId, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(externalId))
+            throw new ArgumentException("A game external id is required.", nameof(externalId));
+
+        var cacheKey = $"rawg-game:{externalId.Trim()}";
+        if (cache is not null && cache.TryGetValue(cacheKey, out CatalogGame? cached))
+            return cached;
+
+        ValidateSettings();
+        var client = httpClientFactory.CreateClient("GameCatalogApi");
+        if (!TryBuildRequestUrl($"games/{Uri.EscapeDataString(externalId.Trim())}", out var requestUrl))
+            return null;
+
+        using var response = await client.GetAsync(requestUrl, cancellationToken);
+        if (response.StatusCode == HttpStatusCode.NotFound)
+            return null;
+        if (!response.IsSuccessStatusCode)
+            throw new HttpRequestException($"RAWG game request failed with HTTP {(int)response.StatusCode} ({response.ReasonPhrase}).");
+
+        var game = await response.Content.ReadFromJsonAsync<RawgGame>(cancellationToken: cancellationToken);
+        if (game is null)
+            return null;
+
+        var mapped = Map(game);
+        cache?.Set(cacheKey, mapped, TimeSpan.FromMinutes(5));
+        return mapped;
+    }
 
     public Task<IReadOnlyList<CatalogGame>> SearchGamesAsync(string query, CancellationToken cancellationToken = default)
     {
@@ -39,7 +70,28 @@ public sealed class HttpGameCatalogProvider(
             .ToArray();
     }
 
-    private async Task<IReadOnlyList<CatalogGame>> QueryAsync(string path, CancellationToken cancellationToken)
+    public Task<IReadOnlyList<CatalogGame>> GetRecentGamesAsync(
+        int limit,
+        DateTime releasedBefore,
+        CancellationToken cancellationToken = default)
+    {
+        if (limit <= 0)
+            throw new ArgumentOutOfRangeException(nameof(limit));
+
+        var date = releasedBefore.ToUniversalTime().ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        var pageSize = Math.Min(limit, 40);
+        return QueryAsync(
+            $"games?dates=1900-01-01,{date}&ordering=-released&page_size={pageSize}",
+            cancellationToken,
+            followNext: false,
+            maximumResults: limit);
+    }
+
+    private async Task<IReadOnlyList<CatalogGame>> QueryAsync(
+        string path,
+        CancellationToken cancellationToken,
+        bool followNext = true,
+        int? maximumResults = null)
     {
         ValidateSettings();
         var client = httpClientFactory.CreateClient("GameCatalogApi");
@@ -64,7 +116,13 @@ public sealed class HttpGameCatalogProvider(
                 if (payload.Results is null)
                     throw new InvalidOperationException("RAWG returned a response without results.");
                 games.AddRange(payload.Results.Select(Map));
-                nextUrl = payload.Next;
+                if (maximumResults is int max && games.Count >= max)
+                {
+                    games = games.Take(max).ToList();
+                    break;
+                }
+
+                nextUrl = followNext ? payload.Next : null;
             }
             catch (JsonException ex)
             {
