@@ -1,0 +1,1 @@
+GameSense supports gaming reviewers through a knowledge-gated review workflow. Reviewers complete quizzes, receive scored evaluations, and may proceed when they meet the product's eligibility rules. Success means preserving a reliable path from knowledge evaluation to review creation.
